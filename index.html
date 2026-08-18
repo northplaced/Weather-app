@@ -12,8 +12,13 @@
     <main class="card">
       <h1>Weather App</h1>
 
-      <form id="search-form">
-        <input type="text" id="city-input" placeholder="Enter a city name" required>
+      <form id="search-form" autocomplete="off">
+        <div class="city-input-wrap">
+          <input type="text" id="city-input" placeholder="Enter a city name" required
+                 aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions-list" role="combobox">
+          <button type="button" id="clear-input-btn" class="clear-input-btn" aria-label="Clear city name">&times;</button>
+          <ul id="suggestions-list" class="suggestions" role="listbox"></ul>
+        </div>
         <button type="submit">Search</button>
       </form>
 
@@ -47,6 +52,13 @@
       </p>
     </aside>
   </div>
+
+  <section class="pollen-panel">
+    <h3>🌾 Pollen forecast</h3>
+    <div id="pollen-content">
+      <p class="pollen-placeholder">Search a city to see the pollen forecast.</p>
+    </div>
+  </section>
 
   <script src="script.js"></script>
 </body>

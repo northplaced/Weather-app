@@ -6,8 +6,10 @@ body {
   margin: 0;
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 24px;
   font-family: Arial, Helvetica, sans-serif;
   background: linear-gradient(135deg, #d9a066, #b3714a);
   padding: 24px 0;
@@ -183,6 +185,109 @@ body {
   color: inherit;
 }
 
+/* Pollen forecast */
+
+.pollen-panel {
+  background: #fdf3e7;
+  border-radius: 12px;
+  padding: 24px 32px;
+  width: 90%;
+  max-width: 960px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+}
+
+.pollen-panel h3 {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  color: #6b4e34;
+}
+
+.pollen-placeholder {
+  color: #6b4e34;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+
+.pollen-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pollen-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pollen-value {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #4a3320;
+  margin-bottom: 6px;
+}
+
+.pollen-bar-track {
+  position: relative;
+  width: 14px;
+  height: 90px;
+  background: rgba(179, 113, 74, 0.12);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.pollen-bar-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+
+.pollen-tick {
+  position: absolute;
+  left: -3px;
+  width: 20px;
+  height: 2px;
+  background: #6b4e34;
+}
+
+.pollen-category {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #6b4e34;
+}
+
+.pollen-name {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #4a3320;
+}
+
+.pollen-name-local {
+  font-size: 0.7rem;
+  color: #6b4e34;
+  font-style: italic;
+}
+
+.pollen-summary {
+  font-size: 0.85rem;
+  color: #4a3320;
+  margin: 8px 0 4px;
+}
+
+.pollen-note {
+  font-size: 0.7rem;
+  color: #9c8267;
+  margin: 4px 0 0;
+}
+
 h1 {
   margin-top: 0;
   font-size: 1.5rem;
@@ -195,9 +300,14 @@ h1 {
   margin-bottom: 20px;
 }
 
-#city-input {
+.city-input-wrap {
+  position: relative;
   flex: 1;
-  padding: 10px 12px;
+}
+
+#city-input {
+  width: 100%;
+  padding: 10px 34px 10px 12px;
   border: 1px solid #d9c3ac;
   border-radius: 8px;
   font-size: 1rem;
@@ -208,6 +318,92 @@ h1 {
 #city-input:focus {
   outline: none;
   border-color: #b3714a;
+}
+
+.clear-input-btn {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #9c8267;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-input-btn:hover {
+  background: rgba(179, 113, 74, 0.15);
+  color: #6b4e34;
+}
+
+.suggestions {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #fffaf3;
+  border: 1px solid #d9c3ac;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.15);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.suggestions.open {
+  display: block;
+}
+
+.suggestion-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #4a3320;
+}
+
+.suggestion-item + .suggestion-item {
+  margin-top: 2px;
+}
+
+.suggestion-item:hover,
+.suggestion-item.highlighted {
+  background: #b3714a;
+  color: #fffaf3;
+}
+
+.suggestion-item:hover .suggestion-subtitle,
+.suggestion-item.highlighted .suggestion-subtitle {
+  color: #fffaf3;
+}
+
+.suggestion-name {
+  display: block;
+  font-size: 1rem;
+}
+
+.suggestion-subtitle {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b4e34;
+}
+
+.suggestion-empty {
+  padding: 8px 10px;
+  color: #6b4e34;
+  font-size: 0.9rem;
 }
 
 button {

@@ -1,6 +1,17 @@
 const form = document.getElementById('search-form');
 const cityInput = document.getElementById('city-input');
 const result = document.getElementById('result');
+const suggestionsList = document.getElementById('suggestions-list');
+const clearInputBtn = document.getElementById('clear-input-btn');
+const pollenContent = document.getElementById('pollen-content');
+
+let debounceTimer = null;
+let suggestionRequestId = 0;
+let currentSuggestions = [];
+let highlightedIndex = -1;
+
+const MIN_QUERY_LENGTH = 2;
+const DEBOUNCE_DELAY = 350;
 
 // Maps Open-Meteo's weather codes to plain-English descriptions.
 const weatherDescriptions = {
@@ -50,6 +61,7 @@ function getWeatherIcon(code, isDay) {
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
+  closeSuggestions();
   searchCity(cityInput.value.trim());
 });
 
@@ -60,6 +72,17 @@ async function searchCity(city) {
 
   try {
     const location = await getCoordinates(city);
+    await loadLocation(location);
+  } catch (error) {
+    result.innerHTML = `<p>${error.message}</p>`;
+  }
+}
+
+async function loadLocation(location) {
+  result.innerHTML = '<p>Loading...</p>';
+  pollenContent.innerHTML = '<p class="pollen-placeholder">Loading...</p>';
+
+  try {
     renderRadar(location.latitude, location.longitude);
 
     const [forecast, air] = await Promise.all([
@@ -67,6 +90,7 @@ async function searchCity(city) {
       getAirQuality(location.latitude, location.longitude),
     ]);
     renderWeather(location, forecast, air);
+    pollenContent.innerHTML = buildPollenForecast(air);
   } catch (error) {
     result.innerHTML = `<p>${error.message}</p>`;
   }
@@ -85,6 +109,162 @@ async function getCoordinates(city) {
   const { latitude, longitude, name, country } = data.results[0];
   return { latitude, longitude, name, country };
 }
+
+async function getSuggestions(query) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=en&format=json`;
+  const response = await fetch(url);
+  const data = await response.json();
+  return data.results || [];
+}
+
+cityInput.addEventListener('input', () => {
+  const query = cityInput.value.trim();
+  clearTimeout(debounceTimer);
+
+  if (query.length < MIN_QUERY_LENGTH) {
+    closeSuggestions();
+    return;
+  }
+
+  debounceTimer = setTimeout(() => fetchSuggestions(query), DEBOUNCE_DELAY);
+});
+
+// Small "x" button so mobile users can clear the current city in one tap instead of
+// holding backspace — shown whenever the input has text, hidden when it's empty.
+cityInput.addEventListener('input', updateClearButtonVisibility);
+
+function updateClearButtonVisibility() {
+  clearInputBtn.style.display = cityInput.value.length > 0 ? 'flex' : 'none';
+}
+
+clearInputBtn.addEventListener('click', () => {
+  cityInput.value = '';
+  updateClearButtonVisibility();
+  closeSuggestions();
+  cityInput.focus();
+});
+
+async function fetchSuggestions(query) {
+  const requestId = ++suggestionRequestId;
+  let results = [];
+
+  try {
+    results = await getSuggestions(query);
+  } catch (error) {
+    results = [];
+  }
+
+  if (requestId !== suggestionRequestId) return; // superseded by a newer request
+
+  currentSuggestions = results;
+  renderSuggestions(results);
+}
+
+function renderSuggestions(suggestions) {
+  highlightedIndex = -1;
+
+  if (suggestions.length === 0) {
+    suggestionsList.innerHTML = '<li class="suggestion-empty">No matches</li>';
+    openSuggestions();
+    return;
+  }
+
+  suggestionsList.innerHTML = suggestions
+    .map((place, index) => {
+      const subtitle = [place.admin1, place.country].filter(Boolean).join(', ');
+      return `
+        <li class="suggestion-item" role="option" id="suggestion-${index}" data-index="${index}">
+          <span class="suggestion-name">${place.name}</span>
+          ${subtitle ? `<span class="suggestion-subtitle">${subtitle}</span>` : ''}
+        </li>
+      `;
+    })
+    .join('');
+
+  openSuggestions();
+}
+
+function openSuggestions() {
+  suggestionsList.classList.add('open');
+  cityInput.setAttribute('aria-expanded', 'true');
+}
+
+function closeSuggestions() {
+  suggestionRequestId++; // invalidate any in-flight fetch so it can't reopen this later
+  suggestionsList.classList.remove('open');
+  suggestionsList.innerHTML = '';
+  currentSuggestions = [];
+  highlightedIndex = -1;
+  cityInput.setAttribute('aria-expanded', 'false');
+  cityInput.removeAttribute('aria-activedescendant');
+}
+
+function selectSuggestion(index) {
+  const place = currentSuggestions[index];
+  if (!place) return;
+
+  cityInput.value = place.name;
+  closeSuggestions();
+
+  loadLocation({
+    latitude: place.latitude,
+    longitude: place.longitude,
+    name: place.name,
+    country: place.country,
+  });
+}
+
+suggestionsList.addEventListener('click', (event) => {
+  const item = event.target.closest('.suggestion-item[data-index]');
+  if (!item) return;
+  selectSuggestion(Number(item.dataset.index));
+});
+
+cityInput.addEventListener('keydown', (event) => {
+  const isOpen = suggestionsList.classList.contains('open') && currentSuggestions.length > 0;
+
+  if (event.key === 'ArrowDown') {
+    if (!isOpen) return;
+    event.preventDefault();
+    highlightedIndex = (highlightedIndex + 1) % currentSuggestions.length;
+    updateHighlight();
+  } else if (event.key === 'ArrowUp') {
+    if (!isOpen) return;
+    event.preventDefault();
+    highlightedIndex = (highlightedIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+    updateHighlight();
+  } else if (event.key === 'Enter') {
+    if (isOpen && highlightedIndex >= 0) {
+      event.preventDefault();
+      selectSuggestion(highlightedIndex);
+    } else {
+      closeSuggestions(); // fall through to normal form submission
+    }
+  } else if (event.key === 'Escape') {
+    if (isOpen) {
+      event.preventDefault();
+      closeSuggestions();
+    }
+  }
+});
+
+function updateHighlight() {
+  const items = suggestionsList.querySelectorAll('.suggestion-item[data-index]');
+  items.forEach((item) => item.classList.remove('highlighted'));
+
+  const activeItem = items[highlightedIndex];
+  if (activeItem) {
+    activeItem.classList.add('highlighted');
+    activeItem.scrollIntoView({ block: 'nearest' });
+    cityInput.setAttribute('aria-activedescendant', activeItem.id);
+  } else {
+    cityInput.removeAttribute('aria-activedescendant');
+  }
+}
+
+document.addEventListener('click', (event) => {
+  if (!form.contains(event.target)) closeSuggestions();
+});
 
 async function getForecast(latitude, longitude) {
   const params = [
@@ -107,7 +287,7 @@ async function getForecast(latitude, longitude) {
 
 async function getAirQuality(latitude, longitude) {
   try {
-    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&current=european_aqi&timezone=auto`;
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&current=european_aqi,alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=auto`;
     const response = await fetch(url);
     if (!response.ok) return null;
     const data = await response.json();
@@ -518,6 +698,91 @@ function getBeaufortDescription(kmh) {
   if (kmh < 103) return 'Storm';
   if (kmh < 118) return 'Violent storm';
   return 'Hurricane';
+}
+
+// Season-start and peak thresholds (grains/m³) per the CAMS/SILAM pollen classification,
+// based on clinically relevant thresholds from the European Academy of Allergy and Clinical
+// Immunology (EAACI). Tree pollens share one scale; grass and ragweed share a lower one.
+const POLLEN_SPECIES = [
+  { key: 'birch_pollen', name: 'Birch', local: 'Koivu', seasonStart: 10, peak: 100 },
+  { key: 'alder_pollen', name: 'Alder', local: 'Leppä', seasonStart: 10, peak: 100 },
+  { key: 'grass_pollen', name: 'Grass', local: 'Heinä', seasonStart: 3, peak: 50 },
+  { key: 'mugwort_pollen', name: 'Mugwort', local: 'Pujo', seasonStart: 10, peak: 100 },
+  { key: 'ragweed_pollen', name: 'Ragweed', local: 'Ambrosia', seasonStart: 3, peak: 50 },
+  { key: 'olive_pollen', name: 'Olive', local: 'Oliivi', seasonStart: 10, peak: 100 },
+];
+
+function getPollenCategory(value, seasonStart, peak) {
+  if (value <= 0) return { label: 'None', color: '#9c8267' };
+  if (value < seasonStart) return { label: 'Present', color: '#4a90d9' };
+  if (value < peak) return { label: 'Elevated', color: '#ff9800' };
+  return { label: 'Peak', color: '#f44336' };
+}
+
+function buildPollenForecast(air) {
+  const hasData = air && POLLEN_SPECIES.some((species) => air[species.key] != null);
+  if (!hasData) {
+    return '<p class="pollen-placeholder">Pollen data isn\'t available for this location (coverage is currently Europe-only).</p>';
+  }
+
+  const columns = POLLEN_SPECIES.map((species) => {
+    const value = air[species.key];
+
+    if (value == null) {
+      return `
+        <div class="pollen-col">
+          <div class="pollen-value">--</div>
+          <div class="pollen-bar-track"></div>
+          <div class="pollen-category">N/A</div>
+          <div class="pollen-name">${species.name}</div>
+          <div class="pollen-name-local">(${species.local})</div>
+        </div>
+      `;
+    }
+
+    const category = getPollenCategory(value, species.seasonStart, species.peak);
+    const fillPercent = Math.min(100, (value / species.peak) * 100);
+    const tickPercent = (species.seasonStart / species.peak) * 100;
+
+    return `
+      <div class="pollen-col">
+        <div class="pollen-value">${value.toFixed(1)}</div>
+        <div class="pollen-bar-track">
+          <div class="pollen-bar-fill" style="height: ${fillPercent.toFixed(1)}%; background: ${category.color};"></div>
+          <div class="pollen-tick" style="bottom: ${tickPercent.toFixed(1)}%;"></div>
+        </div>
+        <div class="pollen-category" style="color: ${category.color};">${category.label}</div>
+        <div class="pollen-name">${species.name}</div>
+        <div class="pollen-name-local">(${species.local})</div>
+      </div>
+    `;
+  }).join('');
+
+  const withData = POLLEN_SPECIES.filter((species) => air[species.key] != null);
+  const mostActive = withData.reduce((max, species) => {
+    const ratio = air[species.key] / species.peak;
+    const maxRatio = air[max.key] / max.peak;
+    return ratio > maxRatio ? species : max;
+  }, withData[0]);
+
+  let summary;
+  if (mostActive && air[mostActive.key] > 0) {
+    const category = getPollenCategory(air[mostActive.key], mostActive.seasonStart, mostActive.peak);
+    summary = `
+      <p class="pollen-summary">
+        ${mostActive.name} (${mostActive.local}) is the most active today: <strong style="color: ${category.color}">${category.label}</strong>
+        at ${air[mostActive.key].toFixed(1)} grains/m&sup3; — season starts at ${mostActive.seasonStart}, peak at ${mostActive.peak}.
+      </p>
+    `;
+  } else {
+    summary = '<p class="pollen-summary">No significant pollen activity detected today.</p>';
+  }
+
+  return `
+    <div class="pollen-grid">${columns}</div>
+    ${summary}
+    <p class="pollen-note">Tick marks show each species' own season-start threshold — bar height is scaled to that species' own peak level (grains/m&sup3;), not a shared scale, since species differ widely in allergenicity.</p>
+  `;
 }
 
 // The floating marker label is centered on its tick by default, but centering can push wide
@@ -1036,4 +1301,5 @@ radarMapEl.addEventListener('touchcancel', cancelRadarTouch);
 
 // Show a default city as soon as the page loads.
 cityInput.value = 'Tampere';
+updateClearButtonVisibility();
 searchCity('Tampere');
