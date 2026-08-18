@@ -187,12 +187,23 @@ body {
 
 /* Pollen forecast */
 
+/* Matches .app-layout's own max width (440px card + 24px gap + 600px radar panel) and
+   centering, so .pollen-panel — anchored to this wrapper's left edge below — lines up with
+   the weather card's left edge regardless of the panel's own (narrower) width. */
+.pollen-outer {
+  width: 90%;
+  max-width: 1064px;
+  display: flex;
+}
+
 .pollen-panel {
   background: #fdf3e7;
   border-radius: 12px;
   padding: 24px 32px;
-  width: 90%;
-  max-width: 960px;
+  width: 100%;
+  /* Matches .card's own max width, and its right edge lines up with .card's right edge since
+     both sit flush against the same left-aligned starting point (see .pollen-outer above). */
+  max-width: 440px;
   text-align: center;
   box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
 }

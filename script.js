@@ -372,11 +372,14 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
 
   // 3-hour pressure tendency — the number meteorologists actually watch for incoming weather,
   // since a fast drop is a reliable short-term storm signal even before the absolute level
-  // looks low. Falls back to a shorter window near the very start of the fetched hourly data.
+  // looks low. Falls back to a shorter window near the very start of the fetched hourly data;
+  // at hour zero exactly there's no prior data at all (we don't have yesterday's hours), so we
+  // show an explicit "unavailable" note rather than silently hiding the whole line — otherwise
+  // this header changes shape for ~1 hour a day depending on time of day, which reads as a bug.
   const pressureTrendHours = Math.min(3, nowIndex);
   const pressureTrendChange =
     pressureTrendHours > 0 ? current.surface_pressure - hourly.surface_pressure[nowIndex - pressureTrendHours] : null;
-  let pressureTrendLabel = '';
+  let pressureTrendLabel = 'Trend unavailable yet';
   let pressureTrendColor = '#6b4e34';
   if (pressureTrendChange != null) {
     const sign = pressureTrendChange > 0 ? '+' : '';
@@ -462,7 +465,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
     <div class="detail-card detail-card-wide">
       <div class="label pressure-trend-label">
         <span>📊 Pressure</span>
-        ${pressureTrendLabel ? `<span class="pressure-trend-indicator" style="color: ${pressureTrendColor}">${pressureTrendLabel}</span>` : ''}
+        <span class="pressure-trend-indicator" style="color: ${pressureTrendColor}">${pressureTrendLabel}</span>
       </div>
       <div class="pressure-bar-wrap">
         <div class="pressure-bar">
