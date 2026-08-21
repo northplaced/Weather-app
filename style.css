@@ -1092,6 +1092,107 @@ button:hover {
   margin: 8px 0;
 }
 
+/* Moonrise & moonset arc — separate namespace mirroring .sun-arc*, own night-toned palette */
+
+.moon-arc-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.moon-arc {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  align-self: center;
+}
+
+.moon-arc text {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.moon-arc-baseline {
+  stroke: rgba(107, 78, 52, 0.3);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+
+.moon-arc-elapsed {
+  fill: none;
+  stroke: #7c8ba1;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.moon-arc-remaining {
+  fill: none;
+  stroke: rgba(107, 78, 52, 0.35);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 4 5;
+}
+
+.moon-arc-tick {
+  stroke: #6b4e34;
+  stroke-width: 1.5;
+}
+
+.moon-arc-glow {
+  fill: rgba(124, 139, 161, 0.25);
+}
+
+.moon-arc-marker {
+  fill: #9aa8bd;
+  stroke: #fdf3e7;
+  stroke-width: 2;
+}
+
+.moon-arc-side-label {
+  font-size: 11px;
+  fill: #6b4e34;
+}
+
+.moon-arc-side-value {
+  font-size: 20px;
+  font-weight: bold;
+  fill: #4a3320;
+}
+
+.moon-arc-horizon-label {
+  font-size: 9px;
+  fill: #6b4e34;
+}
+
+.moon-arc-caption {
+  text-align: center;
+}
+
+.moon-arc-caption-label {
+  font-size: 0.85rem;
+  color: #6b4e34;
+}
+
+.moon-arc-caption-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #4a3320;
+}
+
+.moon-phase-value {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #4a3320;
+}
+
+.moon-arc-unavailable {
+  color: #6b4e34;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 8px 0;
+}
+
 /* 10-day forecast */
 
 .daily-list {

@@ -272,7 +272,7 @@ async function getForecast(latitude, longitude) {
     `longitude=${longitude}`,
     `current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day`,
     `hourly=temperature_2m,weather_code,precipitation_probability,visibility,uv_index,is_day,surface_pressure`,
-    `daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max`,
+    `daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,moonrise,moonset,moon_phase`,
     `timezone=auto`,
     `wind_speed_unit=ms`,
     `forecast_days=10`,
@@ -329,10 +329,15 @@ function renderWeather(location, forecast, air) {
 
     <section>
       <div class="section-header">
-        <h3>Sunrise &amp; sunset</h3>
+        <h3>☀️ Sunrise &amp; sunset</h3>
         <span class="local-time">Local time ${formatTime(current.time)}</span>
       </div>
       <div class="sun-arc-wrap">${buildSunPath(daily, current.time)}</div>
+    </section>
+
+    <section>
+      <h3>🌙 Moonrise &amp; moonset</h3>
+      <div class="moon-arc-wrap">${buildMoonPath(daily, current.time)}</div>
     </section>
 
     <section>
@@ -592,6 +597,97 @@ function buildSunPath(daily, currentTimeIso) {
     <div class="sun-arc-caption">
       <span class="sun-arc-caption-label">${bottomLabel}</span>
       <span class="sun-arc-caption-value">${bottomValue}</span>
+    </div>
+  `;
+}
+
+// Buckets Open-Meteo's 0-1 moon_phase fraction into the 8 traditional phase names, each
+// centered on its exact fraction (0/0.25/0.5/0.75/1 = New/First Quarter/Full/Last Quarter/New)
+// with a 1/8-wide band around it.
+function getMoonPhaseInfo(phase) {
+  const p = ((phase % 1) + 1) % 1;
+  if (p < 0.0625 || p >= 0.9375) return { label: 'New Moon', icon: '🌑' };
+  if (p < 0.1875) return { label: 'Waxing Crescent', icon: '🌒' };
+  if (p < 0.3125) return { label: 'First Quarter', icon: '🌓' };
+  if (p < 0.4375) return { label: 'Waxing Gibbous', icon: '🌔' };
+  if (p < 0.5625) return { label: 'Full Moon', icon: '🌕' };
+  if (p < 0.6875) return { label: 'Waning Gibbous', icon: '🌖' };
+  if (p < 0.8125) return { label: 'Last Quarter', icon: '🌗' };
+  return { label: 'Waning Crescent', icon: '🌘' };
+}
+
+// Draws a moon arc between moonrise and moonset, mirroring buildSunPath's geometry and
+// before/after fallback logic, but as a fully separate function/markup/CSS namespace so the
+// sun card is untouched.
+function buildMoonPath(daily, currentTimeIso) {
+  const moonriseIso = daily.moonrise[0];
+  const moonsetIso = daily.moonset[0];
+
+  if (!moonriseIso || !moonsetIso) {
+    return '<p class="moon-arc-unavailable">Moonrise/moonset data unavailable for this location.</p>';
+  }
+
+  const moonriseDate = new Date(moonriseIso);
+  const moonsetDate = new Date(moonsetIso);
+  const now = new Date(currentTimeIso);
+
+  const upMs = moonsetDate - moonriseDate;
+  const elapsedMs = now - moonriseDate;
+  const t = Math.max(0, Math.min(1, upMs > 0 ? elapsedMs / upMs : 0));
+
+  const leftX = 4;
+  const rightX = 336;
+  const arcLeftX = 80;
+  const arcRightX = 260;
+  const baselineY = 85;
+  const arcRy = 65;
+  const arcRx = (arcRightX - arcLeftX) / 2;
+  const arcCx = (arcLeftX + arcRightX) / 2;
+
+  const angle = Math.PI - t * Math.PI;
+  const moonX = (arcCx + arcRx * Math.cos(angle)).toFixed(1);
+  const moonY = (baselineY - arcRy * Math.sin(angle)).toFixed(1);
+
+  const moonriseLabel = formatTime(moonriseIso);
+  const moonsetLabel = formatTime(moonsetIso);
+  const phaseInfo = getMoonPhaseInfo(daily.moon_phase[0]);
+
+  let bottomLabel;
+  let bottomValue;
+
+  if (now < moonriseDate || now > moonsetDate) {
+    const nextMoonriseIso = now < moonriseDate ? moonriseIso : daily.moonrise[1];
+    const untilMoonriseMin = nextMoonriseIso ? Math.max(0, Math.round((new Date(nextMoonriseIso) - now) / 60000)) : 0;
+    bottomLabel = 'Moonrise in';
+    bottomValue = `${Math.floor(untilMoonriseMin / 60)}h ${untilMoonriseMin % 60}m`;
+  } else {
+    const remainingMin = Math.max(0, Math.round((upMs * (1 - t)) / 60000));
+    bottomLabel = 'Moonset in';
+    bottomValue = `${Math.floor(remainingMin / 60)}h ${remainingMin % 60}m`;
+  }
+
+  return `
+    <div class="moon-arc-caption">
+      <span class="moon-phase-value">${phaseInfo.icon} ${phaseInfo.label}</span>
+    </div>
+    <svg class="moon-arc" viewBox="0 2 340 98" preserveAspectRatio="xMidYMid meet" role="img"
+         aria-label="Moon phase: ${phaseInfo.label}, ${bottomLabel.toLowerCase()} ${bottomValue}, moonrise ${moonriseLabel}, moonset ${moonsetLabel}">
+      <line class="moon-arc-baseline" x1="${leftX}" y1="${baselineY}" x2="${rightX}" y2="${baselineY}" />
+      <path class="moon-arc-elapsed" d="M ${arcLeftX},${baselineY} A ${arcRx},${arcRy} 0 0,1 ${moonX},${moonY}" />
+      <path class="moon-arc-remaining" d="M ${moonX},${moonY} A ${arcRx},${arcRy} 0 0,1 ${arcRightX},${baselineY}" />
+      <line class="moon-arc-tick" x1="${arcLeftX}" y1="${baselineY - 6}" x2="${arcLeftX}" y2="${baselineY + 6}" />
+      <line class="moon-arc-tick" x1="${arcRightX}" y1="${baselineY - 6}" x2="${arcRightX}" y2="${baselineY + 6}" />
+      <circle class="moon-arc-glow" cx="${moonX}" cy="${moonY}" r="14" />
+      <circle class="moon-arc-marker" cx="${moonX}" cy="${moonY}" r="7" />
+      <text class="moon-arc-side-label" x="${leftX}" y="${baselineY - 24}">Moonrise</text>
+      <text class="moon-arc-side-value" x="${leftX}" y="${baselineY - 6}">${moonriseLabel}</text>
+      <text class="moon-arc-side-label" x="${rightX}" y="${baselineY - 24}" text-anchor="end">Moonset</text>
+      <text class="moon-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${moonsetLabel}</text>
+      <text class="moon-arc-horizon-label" x="${rightX}" y="${baselineY + 10}" text-anchor="end">Horizon</text>
+    </svg>
+    <div class="moon-arc-caption">
+      <span class="moon-arc-caption-label">${bottomLabel}</span>
+      <span class="moon-arc-caption-value">${bottomValue}</span>
     </div>
   `;
 }
