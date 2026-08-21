@@ -716,13 +716,16 @@ function getBeaufortDescription(kmh) {
 // (alder, birch, olive, mugwort) share one scale; grass and ragweed share a lower one.
 // Ordered by standard annual pollen cycle: alder/birch (early spring) -> olive (spring) ->
 // grass (late spring-summer) -> mugwort -> ragweed (late summer-autumn).
+// activeStart/activeEnd are rendered stacked (start above end) rather than as one
+// "Start – End" string, since the combined string is too wide to fit a narrow mobile column
+// without wrapping mid-word.
 const POLLEN_SPECIES = [
-  { key: 'alder_pollen', name: 'Alder', local: 'Leppä', seasonStart: 10, peak: 100, activeWindow: 'Jan – Mar' },
-  { key: 'birch_pollen', name: 'Birch', local: 'Koivu', seasonStart: 10, peak: 100, activeWindow: 'Mar – May' },
-  { key: 'olive_pollen', name: 'Olive', local: 'Oliivi', seasonStart: 10, peak: 100, activeWindow: 'Apr – Jun' },
-  { key: 'grass_pollen', name: 'Grass', local: 'Heinä', seasonStart: 3, peak: 50, activeWindow: 'May – Jul' },
-  { key: 'mugwort_pollen', name: 'Mugwort', local: 'Pujo', seasonStart: 10, peak: 100, activeWindow: 'Jul – Aug' },
-  { key: 'ragweed_pollen', name: 'Ragweed', local: 'Ambrosia', seasonStart: 3, peak: 50, activeWindow: 'Aug – Nov' },
+  { key: 'alder_pollen', name: 'Alder', local: 'Leppä', seasonStart: 10, peak: 100, activeStart: 'Jan', activeEnd: 'Mar' },
+  { key: 'birch_pollen', name: 'Birch', local: 'Koivu', seasonStart: 10, peak: 100, activeStart: 'Mar', activeEnd: 'May' },
+  { key: 'olive_pollen', name: 'Olive', local: 'Oliivi', seasonStart: 10, peak: 100, activeStart: 'Apr', activeEnd: 'Jun' },
+  { key: 'grass_pollen', name: 'Grass', local: 'Heinä', seasonStart: 3, peak: 50, activeStart: 'May', activeEnd: 'Jul' },
+  { key: 'mugwort_pollen', name: 'Mugwort', local: 'Pujo', seasonStart: 10, peak: 100, activeStart: 'Jul', activeEnd: 'Aug' },
+  { key: 'ragweed_pollen', name: 'Ragweed', local: 'Ambrosia', seasonStart: 3, peak: 50, activeStart: 'Aug', activeEnd: 'Nov' },
 ];
 
 function getPollenCategory(value, seasonStart, peak) {
@@ -747,7 +750,10 @@ function buildPollenForecast(air) {
           <div class="pollen-value">--</div>
           <div class="pollen-bar-track"></div>
           <div class="pollen-category">N/A</div>
-          <div class="pollen-active-window">(${species.activeWindow})</div>
+          <div class="pollen-active-window">
+            <div>${species.activeStart}</div>
+            <div>${species.activeEnd}</div>
+          </div>
           <div class="pollen-name">${species.name}</div>
           <div class="pollen-name-local">(${species.local})</div>
         </div>
@@ -766,7 +772,10 @@ function buildPollenForecast(air) {
           <div class="pollen-tick" style="bottom: ${tickPercent.toFixed(1)}%;"></div>
         </div>
         <div class="pollen-category" style="color: ${category.color};">${category.label}</div>
-        <div class="pollen-active-window">(${species.activeWindow})</div>
+        <div class="pollen-active-window">
+          <div>${species.activeStart}</div>
+          <div>${species.activeEnd}</div>
+        </div>
         <div class="pollen-name">${species.name}</div>
         <div class="pollen-name-local">(${species.local})</div>
       </div>

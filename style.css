@@ -223,7 +223,7 @@ body {
 .pollen-grid {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 16px;
 }
 
@@ -267,7 +267,7 @@ body {
 
 .pollen-category {
   margin-top: 8px;
-  font-size: 0.7rem;
+  font-size: 0.55rem;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -277,18 +277,19 @@ body {
 .pollen-active-window {
   margin-top: 8px;
   font-size: 0.55rem;
+  line-height: 1.05;
   color: #9c8267;
 }
 
 .pollen-name {
   margin-top: 2px;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-weight: bold;
   color: #4a3320;
 }
 
 .pollen-name-local {
-  font-size: 0.7rem;
+  font-size: 0.55rem;
   color: #6b4e34;
   font-style: italic;
 }
@@ -480,12 +481,27 @@ button:hover {
   text-align: center;
 }
 
+/* Breaks out of .card's own 32px padding (negative side margins) so the 1fr spacer tracks
+   below are measured against the card's true edge-to-edge width — otherwise the outer two
+   spacers would sit on top of that existing padding while the center one wouldn't, making the
+   outer gaps bigger than the center one despite the tracks themselves being equal. */
 .current-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
   align-items: center;
-  column-gap: 24px;
-  margin-top: 8px;
+  margin: 8px -32px 0;
+}
+
+.temp-big,
+.feels-like,
+.hi-lo {
+  grid-column: 2;
+}
+
+.current-icon,
+.condition,
+.current-precip {
+  grid-column: 4;
 }
 
 .current-icon {
