@@ -274,8 +274,14 @@ body {
   color: #6b4e34;
 }
 
+.pollen-active-window {
+  margin-top: 8px;
+  font-size: 0.55rem;
+  color: #9c8267;
+}
+
 .pollen-name {
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 0.8rem;
   font-weight: bold;
   color: #4a3320;
@@ -452,20 +458,49 @@ button:hover {
   margin: 20px 0 8px;
 }
 
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.section-header h3 {
+  margin: 20px 0 8px;
+}
+
+.local-time {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #6b4e34;
+}
+
 /* Current conditions */
 
 .current {
   text-align: center;
 }
 
+.current-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  column-gap: 24px;
+  margin-top: 8px;
+}
+
 .current-icon {
-  font-size: 3rem;
+  font-size: 3.5rem;
   line-height: 1;
 }
 
 .condition {
   margin: 4px 0;
   color: #6b4e34;
+}
+
+.current-precip {
+  margin: 2px 0 0;
+  color: #4a90d9;
 }
 
 .temp-big {
@@ -504,6 +539,13 @@ button:hover {
 .hour-icon {
   font-size: 1.4rem;
   margin: 4px 0;
+}
+
+.hour-precip {
+  color: #4a90d9;
+  min-height: 1em;
+  position: relative;
+  left: 2px;
 }
 
 .hour-temp {

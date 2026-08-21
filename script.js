@@ -302,15 +302,19 @@ function renderWeather(location, forecast, air) {
   const isDay = current.is_day === 1;
   const nowIndex = getClosestHourIndex(hourly.time, current.time);
   const description = weatherDescriptions[current.weather_code] || 'Unknown conditions';
+  const precipNow = hourly.precipitation_probability[nowIndex];
 
   result.innerHTML = `
     <div class="current">
       <h2>${location.name}, ${location.country}</h2>
-      <div class="current-icon">${getWeatherIcon(current.weather_code, isDay)}</div>
-      <p class="condition">${description}</p>
-      <p class="temp-big">${Math.round(current.temperature_2m)}&deg;C</p>
-      <p class="feels-like">Feels like ${Math.round(current.apparent_temperature)}&deg;C</p>
-      <p class="hi-lo">High ${Math.round(daily.temperature_2m_max[0])}&deg; &middot; Low ${Math.round(daily.temperature_2m_min[0])}&deg;</p>
+      <div class="current-columns">
+        <p class="temp-big">${Math.round(current.temperature_2m)}&deg;C</p>
+        <div class="current-icon">${getWeatherIcon(current.weather_code, isDay)}</div>
+        <p class="feels-like">Feels like ${Math.round(current.apparent_temperature)}&deg;C</p>
+        <p class="condition">${description}</p>
+        <p class="hi-lo">High ${Math.round(daily.temperature_2m_max[0])}&deg; &middot; Low ${Math.round(daily.temperature_2m_min[0])}&deg;</p>
+        <p class="current-precip">${precipNow != null ? precipNow + '%' : ''}</p>
+      </div>
     </div>
 
     <section>
@@ -324,7 +328,10 @@ function renderWeather(location, forecast, air) {
     </section>
 
     <section>
-      <h3>Sunrise &amp; sunset</h3>
+      <div class="section-header">
+        <h3>Sunrise &amp; sunset</h3>
+        <span class="local-time">Local time ${formatTime(current.time)}</span>
+      </div>
       <div class="sun-arc-wrap">${buildSunPath(daily, current.time)}</div>
     </section>
 
@@ -343,12 +350,14 @@ function buildHourly(hourly, nowIndex) {
     const time = new Date(hourly.time[i]);
     const label = i === nowIndex ? 'Now' : time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const icon = getWeatherIcon(hourly.weather_code[i], hourly.is_day[i] === 1);
+    const precip = hourly.precipitation_probability[i];
 
     html += `
       <div class="hour-item">
         <div class="hour-label">${label}</div>
         <div class="hour-icon">${icon}</div>
         <div class="hour-temp">${Math.round(hourly.temperature_2m[i])}&deg;</div>
+        <div class="hour-precip">${precip != null ? precip + '%' : ''}</div>
       </div>
     `;
   }
@@ -397,7 +406,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
 
   return `
     <div class="detail-card">
-      <div class="label">💨 Wind direction ${windDir} <span class="wind-dir-arrow" style="transform: rotate(${current.wind_direction_10m}deg)">↑</span></div>
+      <div class="label">💨 Wind <span class="wind-dir-arrow" style="transform: rotate(${current.wind_direction_10m}deg)">↑</span> ${windDir}</div>
       <div class="wind-bar-wrap">
         <div class="wind-bar">
           <span class="wind-segment wind-segment-blue"></span>
@@ -703,16 +712,17 @@ function getBeaufortDescription(kmh) {
   return 'Hurricane';
 }
 
-// Season-start and peak thresholds (grains/m³) per the CAMS/SILAM pollen classification,
-// based on clinically relevant thresholds from the European Academy of Allergy and Clinical
-// Immunology (EAACI). Tree pollens share one scale; grass and ragweed share a lower one.
+// Absolute None/Present/Elevated/Peak thresholds (grains/m³), per species. Tree pollens
+// (alder, birch, olive, mugwort) share one scale; grass and ragweed share a lower one.
+// Ordered by standard annual pollen cycle: alder/birch (early spring) -> olive (spring) ->
+// grass (late spring-summer) -> mugwort -> ragweed (late summer-autumn).
 const POLLEN_SPECIES = [
-  { key: 'birch_pollen', name: 'Birch', local: 'Koivu', seasonStart: 10, peak: 100 },
-  { key: 'alder_pollen', name: 'Alder', local: 'Leppä', seasonStart: 10, peak: 100 },
-  { key: 'grass_pollen', name: 'Grass', local: 'Heinä', seasonStart: 3, peak: 50 },
-  { key: 'mugwort_pollen', name: 'Mugwort', local: 'Pujo', seasonStart: 10, peak: 100 },
-  { key: 'ragweed_pollen', name: 'Ragweed', local: 'Ambrosia', seasonStart: 3, peak: 50 },
-  { key: 'olive_pollen', name: 'Olive', local: 'Oliivi', seasonStart: 10, peak: 100 },
+  { key: 'alder_pollen', name: 'Alder', local: 'Leppä', seasonStart: 10, peak: 100, activeWindow: 'Jan – Mar' },
+  { key: 'birch_pollen', name: 'Birch', local: 'Koivu', seasonStart: 10, peak: 100, activeWindow: 'Mar – May' },
+  { key: 'olive_pollen', name: 'Olive', local: 'Oliivi', seasonStart: 10, peak: 100, activeWindow: 'Apr – Jun' },
+  { key: 'grass_pollen', name: 'Grass', local: 'Heinä', seasonStart: 3, peak: 50, activeWindow: 'May – Jul' },
+  { key: 'mugwort_pollen', name: 'Mugwort', local: 'Pujo', seasonStart: 10, peak: 100, activeWindow: 'Jul – Aug' },
+  { key: 'ragweed_pollen', name: 'Ragweed', local: 'Ambrosia', seasonStart: 3, peak: 50, activeWindow: 'Aug – Nov' },
 ];
 
 function getPollenCategory(value, seasonStart, peak) {
@@ -737,6 +747,7 @@ function buildPollenForecast(air) {
           <div class="pollen-value">--</div>
           <div class="pollen-bar-track"></div>
           <div class="pollen-category">N/A</div>
+          <div class="pollen-active-window">(${species.activeWindow})</div>
           <div class="pollen-name">${species.name}</div>
           <div class="pollen-name-local">(${species.local})</div>
         </div>
@@ -755,6 +766,7 @@ function buildPollenForecast(air) {
           <div class="pollen-tick" style="bottom: ${tickPercent.toFixed(1)}%;"></div>
         </div>
         <div class="pollen-category" style="color: ${category.color};">${category.label}</div>
+        <div class="pollen-active-window">(${species.activeWindow})</div>
         <div class="pollen-name">${species.name}</div>
         <div class="pollen-name-local">(${species.local})</div>
       </div>
