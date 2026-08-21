@@ -13,6 +13,14 @@ let highlightedIndex = -1;
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_DELAY = 350;
 
+// Escapes text before it's interpolated into an innerHTML template — required for anything
+// that isn't a hardcoded literal (user input, geocoding results, error messages), since none
+// of that is guaranteed free of HTML-special characters.
+function escapeHtml(str) {
+  const chars = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(str).replace(/[&<>"']/g, (ch) => chars[ch]);
+}
+
 // Maps Open-Meteo's weather codes to plain-English descriptions.
 const weatherDescriptions = {
   0: 'Clear sky',
@@ -74,7 +82,7 @@ async function searchCity(city) {
     const location = await getCoordinates(city);
     await loadLocation(location);
   } catch (error) {
-    result.innerHTML = `<p>${error.message}</p>`;
+    result.innerHTML = `<p>${escapeHtml(error.message)}</p>`;
   }
 }
 
@@ -92,7 +100,7 @@ async function loadLocation(location) {
     renderWeather(location, forecast, air);
     pollenContent.innerHTML = buildPollenForecast(air);
   } catch (error) {
-    result.innerHTML = `<p>${error.message}</p>`;
+    result.innerHTML = `<p>${escapeHtml(error.message)}</p>`;
   }
 }
 
@@ -171,10 +179,10 @@ function renderSuggestions(suggestions) {
 
   suggestionsList.innerHTML = suggestions
     .map((place, index) => {
-      const subtitle = [place.admin1, place.country].filter(Boolean).join(', ');
+      const subtitle = escapeHtml([place.admin1, place.country].filter(Boolean).join(', '));
       return `
         <li class="suggestion-item" role="option" id="suggestion-${index}" data-index="${index}">
-          <span class="suggestion-name">${place.name}</span>
+          <span class="suggestion-name">${escapeHtml(place.name)}</span>
           ${subtitle ? `<span class="suggestion-subtitle">${subtitle}</span>` : ''}
         </li>
       `;
@@ -306,7 +314,7 @@ function renderWeather(location, forecast, air) {
 
   result.innerHTML = `
     <div class="current">
-      <h2>${location.name}, ${location.country}</h2>
+      <h2>${escapeHtml(location.name)}, ${escapeHtml(location.country)}</h2>
       <div class="current-columns">
         <p class="temp-big">${Math.round(current.temperature_2m)}&deg;C</p>
         <div class="current-icon">${getWeatherIcon(current.weather_code, isDay)}</div>
