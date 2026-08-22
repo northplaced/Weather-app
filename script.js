@@ -345,7 +345,7 @@ function renderWeather(location, forecast, air) {
 
     <section>
       <h3>🌙 Moonrise &amp; moonset</h3>
-      <div class="moon-arc-wrap">${buildMoonPath(daily, current.time)}</div>
+      <div class="moon-arc-wrap">${buildMoonPath(daily, current.time, location.latitude, location.longitude)}</div>
     </section>
 
     <section>
@@ -624,15 +624,99 @@ function getMoonPhaseInfo(phase) {
   return { label: 'Waning Crescent', icon: '🌘' };
 }
 
+// Builds a chronological {time, type: 'rise'|'set'} event list from parallel moonrise/moonset
+// arrays (as returned by Open-Meteo's daily block), skipping the null entries that mark days
+// where the moon doesn't cross the horizon at all.
+function collectMoonEvents(moonriseArr, moonsetArr) {
+  const events = [];
+  for (let i = 0; i < moonriseArr.length; i++) {
+    if (moonriseArr[i]) events.push({ time: new Date(moonriseArr[i]), type: 'rise' });
+    if (moonsetArr[i]) events.push({ time: new Date(moonsetArr[i]), type: 'set' });
+  }
+  events.sort((a, b) => a.time - b.time);
+  return events;
+}
+
+// Infers whether the moon is currently up or down from a sorted event list: it's up if the
+// most recent event before `now` was a rise, or — if the event list has nothing before `now`
+// in range — if the next event after `now` is a set (a set can only happen if it's already up).
+// Returns null if the event list has no events on either side (window too short to tell).
+function inferMoonState(events, now) {
+  let prevEvent = null;
+  let nextEvent = null;
+  for (const event of events) {
+    if (event.time <= now) prevEvent = event;
+    else if (!nextEvent) nextEvent = event;
+  }
+  if (prevEvent) return prevEvent.type === 'rise' ? 'up' : 'down';
+  if (nextEvent) return nextEvent.type === 'set' ? 'up' : 'down';
+  return null;
+}
+
+function moonHorizonNote(state) {
+  return state === 'up'
+    ? 'The moon is above the horizon all day today — no rise or set at this latitude right now.'
+    : 'The moon is below the horizon all day today — no rise or set at this latitude right now.';
+}
+
+// Only reached when even the already-fetched 10-day forward window has no rise/set event to
+// infer from (an unusually long circumpolar stretch) — fetches a wider backward+forward window
+// scoped to just this lookup, and patches the placeholder note in place once it resolves. Kept
+// as a separate best-effort request rather than widening the shared forecast fetch, so it can't
+// affect any other feature's day-indexing (sun arc, 10-day list, etc. all assume index 0 = today).
+async function refineMoonHorizonNote(latitude, longitude, currentTimeIso) {
+  try {
+    const params = [
+      `latitude=${latitude}`,
+      `longitude=${longitude}`,
+      `daily=moonrise,moonset`,
+      `timezone=auto`,
+      `past_days=14`,
+      `forecast_days=14`,
+    ].join('&');
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    if (!response.ok) return;
+    const data = await response.json();
+    const events = collectMoonEvents(data.daily.moonrise, data.daily.moonset);
+    const state = inferMoonState(events, new Date(currentTimeIso));
+    const noteEl = document.getElementById('moon-horizon-note');
+    if (noteEl && state) noteEl.textContent = moonHorizonNote(state);
+  } catch {
+    // Best-effort refinement only — leave the generic placeholder in place on failure.
+  }
+}
+
 // Draws a moon arc between moonrise and moonset, mirroring buildSunPath's geometry and
 // before/after fallback logic, but as a fully separate function/markup/CSS namespace so the
 // sun card is untouched.
-function buildMoonPath(daily, currentTimeIso) {
+function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   const moonriseIso = daily.moonrise[0];
   const moonsetIso = daily.moonset[0];
+  const phase = daily.moon_phase[0];
 
+  if (phase == null) {
+    return '<p class="moon-arc-unavailable">Moon data unavailable for this location.</p>';
+  }
+
+  const phaseInfo = getMoonPhaseInfo(phase);
+
+  // At high latitudes the moon can stay above or below the horizon for the whole local day
+  // (the same effect as the midnight sun), so some days have no rise or set to draw an arc
+  // for — but the phase itself is still known, so show that instead of hiding everything.
   if (!moonriseIso || !moonsetIso) {
-    return '<p class="moon-arc-unavailable">Moonrise/moonset data unavailable for this location.</p>';
+    const now = new Date(currentTimeIso);
+    const state = inferMoonState(collectMoonEvents(daily.moonrise, daily.moonset), now);
+
+    if (state == null) refineMoonHorizonNote(latitude, longitude, currentTimeIso);
+
+    const note = state ? moonHorizonNote(state) : 'Checking whether the moon is above or below the horizon…';
+
+    return `
+      <div class="moon-arc-caption">
+        <span class="moon-phase-value">${phaseInfo.icon} ${phaseInfo.label}</span>
+      </div>
+      <p class="moon-arc-unavailable" id="moon-horizon-note">${note}</p>
+    `;
   }
 
   const moonriseDate = new Date(moonriseIso);
@@ -658,7 +742,6 @@ function buildMoonPath(daily, currentTimeIso) {
 
   const moonriseLabel = formatTime(moonriseIso);
   const moonsetLabel = formatTime(moonsetIso);
-  const phaseInfo = getMoonPhaseInfo(daily.moon_phase[0]);
 
   let bottomLabel;
   let bottomValue;
