@@ -238,7 +238,17 @@ body {
   font-size: 0.85rem;
   font-weight: bold;
   color: #4a3320;
-  margin-bottom: 6px;
+  margin-top: 8px;
+}
+
+/* Holds the track (which needs its own overflow:hidden to mask the fill's rounded corners)
+   plus the tick line and season-start number, which must NOT be clipped by that overflow —
+   they're siblings of the track, not children of it, so they can extend past its 14px width
+   without being cut off, while still sharing its exact position/size for percentage math. */
+.pollen-bar-wrap {
+  position: relative;
+  width: 14px;
+  height: 90px;
 }
 
 .pollen-bar-track {
@@ -265,8 +275,29 @@ body {
   background: #6b4e34;
 }
 
+.pollen-scale-peak {
+  font-size: 0.5rem;
+  font-weight: bold;
+  color: #6b4e34;
+  margin-bottom: 2px;
+}
+
+/* Sits just right of .pollen-tick's line, outside the 14px bar — position:absolute so it
+   doesn't add to the column's own layout width (columns are already tight on mobile). */
+.pollen-scale-tick {
+  position: absolute;
+  left: 20px;
+  transform: translateY(50%);
+  font-size: 0.5rem;
+  font-weight: bold;
+  color: #6b4e34;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .pollen-category {
-  margin-top: 8px;
+  margin-top: 2px;
   font-size: 0.55rem;
   font-weight: bold;
   text-transform: uppercase;
@@ -310,6 +341,43 @@ h1 {
   margin-top: 0;
   font-size: 1.5rem;
   color: #4a3320;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-header h1 {
+  text-align: left;
+}
+
+.unit-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.unit-toggle-btn {
+  padding: 4px 10px;
+  border: 1px solid #d9c3ac;
+  border-radius: 20px;
+  background: #fffaf3;
+  color: #6b4e34;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.unit-toggle-btn:hover {
+  background: #f5e8d8;
+}
+
+.unit-toggle-btn.active {
+  background: #b3714a;
+  border-color: #b3714a;
+  color: #fffaf3;
 }
 
 #search-form {
@@ -567,6 +635,68 @@ button:hover {
 .hour-temp {
   font-weight: bold;
   color: #4a3320;
+}
+
+/* Widened by the full 16px .hourly-scroll gap and shifted left by half of that via margin-left,
+   so it extends 8px into the gap on both sides, meeting the identically-widened neighboring box
+   exactly in the middle of the gap. margin-right alone can't do this: for a block box, only
+   margin-left shifts its own rendered position — margin-right only affects spacing *after* the
+   box (verified: setting it had zero visible effect on the box's own right edge here), so the
+   right edge has to be pushed out via width instead. Taller than the bar's own scale (30px) by
+   one text row, reserved as permanent headroom above the bar so the value label never has to
+   sit on top of the fill — a same-colored value label directly on a saturated (near-100%) fill
+   was unreadable before this (e.g. heavy rain, 11+mm/h). */
+.hour-rain-box {
+  position: relative;
+  width: calc(100% + 16px);
+  height: 42px;
+  margin: 2px 0 0 -8px;
+  border: 1px solid #d9c3ac;
+  background: #fffaf3;
+  overflow: hidden;
+}
+
+.hour-item:first-child .hour-rain-box {
+  width: calc(100% + 8px);
+  margin-left: 0;
+}
+
+.hour-item:last-child .hour-rain-box {
+  width: calc(100% + 8px);
+}
+
+/* The bar's 0-100% scale is computed against this fixed 30px zone specifically (not the taller
+   box above), so the reserved label headroom never gets eaten into as rain intensity rises. */
+.hour-rain-bar-zone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+}
+
+.hour-rain-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #4a90d9;
+}
+
+/* Anchored to the fill's own top edge (not a fixed position in the box), so the label rides up
+   with the bar as rainfall increases and is always in the clear headroom above it — never over
+   the colored fill itself, regardless of how tall the bar gets. */
+.hour-rain-value {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 1px;
+  font-size: 0.5rem;
+  color: #4a90d9;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 /* Details grid */
@@ -1191,6 +1321,61 @@ button:hover {
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
+}
+
+/* Moon phase section — independent from the Moonrise & moonset card above, own namespace */
+
+.moon-phase-section-unavailable {
+  color: #6b4e34;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.moon-phase-endpoints {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  color: #9c8267;
+  margin-bottom: 2px;
+}
+
+.moon-phase-row-wrap {
+  position: relative;
+  padding-bottom: 18px;
+}
+
+.moon-phase-row {
+  display: flex;
+}
+
+.moon-phase-icon {
+  flex: 1;
+  text-align: center;
+  font-size: 1.3rem;
+  padding: 4px 0;
+  border-radius: 8px;
+}
+
+.moon-phase-icon-current {
+  background: rgba(179, 113, 74, 0.18);
+  transform: scale(1.15);
+}
+
+.moon-phase-indicator {
+  position: absolute;
+  bottom: 0;
+  color: #b3714a;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.moon-phase-label {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #4a3320;
+  margin-top: 6px;
 }
 
 /* 10-day forecast */

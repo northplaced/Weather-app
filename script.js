@@ -13,6 +13,15 @@ let highlightedIndex = -1;
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_DELAY = 350;
 
+const UNITS_STORAGE_KEY = 'weatherapp-units';
+let unitSystem = localStorage.getItem(UNITS_STORAGE_KEY) === 'imperial' ? 'imperial' : 'si';
+
+// Cached inputs from the last successful render, so toggling units can re-render from the
+// already-fetched data instead of re-fetching from the API.
+let lastLocation = null;
+let lastForecast = null;
+let lastAirQuality = null;
+
 // Escapes text before it's interpolated into an innerHTML template — required for anything
 // that isn't a hardcoded literal (user input, geocoding results, error messages), since none
 // of that is guaranteed free of HTML-special characters.
@@ -73,6 +82,22 @@ form.addEventListener('submit', (event) => {
   searchCity(cityInput.value.trim());
 });
 
+function applyUnitToggleUI() {
+  document.querySelectorAll('.unit-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.unit === unitSystem);
+  });
+}
+
+document.querySelectorAll('.unit-toggle-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.unit === unitSystem) return;
+    unitSystem = btn.dataset.unit;
+    localStorage.setItem(UNITS_STORAGE_KEY, unitSystem);
+    applyUnitToggleUI();
+    if (lastForecast) renderWeather(lastLocation, lastForecast, lastAirQuality);
+  });
+});
+
 async function searchCity(city) {
   if (!city) return;
 
@@ -97,6 +122,9 @@ async function loadLocation(location) {
       getForecast(location.latitude, location.longitude),
       getAirQuality(location.latitude, location.longitude),
     ]);
+    lastLocation = location;
+    lastForecast = forecast;
+    lastAirQuality = air;
     renderWeather(location, forecast, air);
     pollenContent.innerHTML = buildPollenForecast(air);
   } catch (error) {
@@ -279,7 +307,7 @@ async function getForecast(latitude, longitude) {
     `latitude=${latitude}`,
     `longitude=${longitude}`,
     `current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day`,
-    `hourly=temperature_2m,weather_code,precipitation_probability,visibility,uv_index,is_day,surface_pressure`,
+    `hourly=temperature_2m,weather_code,precipitation_probability,precipitation,visibility,uv_index,is_day,surface_pressure`,
     `daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,moonrise,moonset,moon_phase`,
     `timezone=auto`,
     `wind_speed_unit=ms`,
@@ -311,17 +339,18 @@ function renderWeather(location, forecast, air) {
   const nowIndex = getClosestHourIndex(hourly.time, current.time);
   const description = weatherDescriptions[current.weather_code] || 'Unknown conditions';
   const precipNow = hourly.precipitation_probability[nowIndex];
+  const rainNow = hourly.precipitation[nowIndex];
 
   result.innerHTML = `
     <div class="current">
       <h2>${escapeHtml(location.name)}, ${escapeHtml(location.country)}</h2>
       <div class="current-columns">
-        <p class="temp-big">${Math.round(current.temperature_2m)}&deg;C</p>
+        <p class="temp-big">${Math.round(convertTemp(current.temperature_2m))}&deg;${tempUnitLabel()}</p>
         <div class="current-icon">${getWeatherIcon(current.weather_code, isDay)}</div>
-        <p class="feels-like">Feels like ${Math.round(current.apparent_temperature)}&deg;C</p>
+        <p class="feels-like">Feels like ${Math.round(convertTemp(current.apparent_temperature))}&deg;${tempUnitLabel()}</p>
         <p class="condition">${description}</p>
-        <p class="hi-lo">High ${Math.round(daily.temperature_2m_max[0])}&deg; &middot; Low ${Math.round(daily.temperature_2m_min[0])}&deg;</p>
-        <p class="current-precip">${precipNow != null ? precipNow + '%' : ''}</p>
+        <p class="hi-lo">High ${Math.round(convertTemp(daily.temperature_2m_max[0]))}&deg; &middot; Low ${Math.round(convertTemp(daily.temperature_2m_min[0]))}&deg;</p>
+        <p class="current-precip">${rainNow != null ? convertPrecipMm(rainNow).toFixed(precipDecimals()) + ' ' + precipUnitLabel() + ' &middot; ' : ''}${precipNow != null ? precipNow + '%' : ''}</p>
       </div>
     </div>
 
@@ -349,6 +378,11 @@ function renderWeather(location, forecast, air) {
     </section>
 
     <section>
+      <h3>🌙 Moon phases</h3>
+      <div class="moon-phase-section">${buildMoonPhaseSection(daily)}</div>
+    </section>
+
+    <section>
       <h3>10-day forecast</h3>
       <div class="daily-list">${buildDaily(daily)}</div>
     </section>
@@ -364,12 +398,21 @@ function buildHourly(hourly, nowIndex) {
     const label = i === nowIndex ? 'Now' : time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const icon = getWeatherIcon(hourly.weather_code[i], hourly.is_day[i] === 1);
     const precip = hourly.precipitation_probability[i];
+    const rainMm = hourly.precipitation[i];
+    const rainFillPercent = rainMm != null ? Math.min(100, (rainMm / 5) * 100) : 0; // 5mm/h ≈ heavy rain, caps the fill
 
     html += `
       <div class="hour-item">
         <div class="hour-label">${label}</div>
+        <div class="hour-temp">${Math.round(convertTemp(hourly.temperature_2m[i]))}&deg;</div>
         <div class="hour-icon">${icon}</div>
-        <div class="hour-temp">${Math.round(hourly.temperature_2m[i])}&deg;</div>
+        <div class="hour-rain-box">
+          <div class="hour-rain-bar-zone">
+            <div class="hour-rain-fill" style="height: ${rainFillPercent.toFixed(1)}%;">
+              <div class="hour-rain-value">${rainMm != null ? convertPrecipMm(rainMm).toFixed(precipDecimals()) + ' ' + precipUnitLabel() : ''}</div>
+            </div>
+          </div>
+        </div>
         <div class="hour-precip">${precip != null ? precip + '%' : ''}</div>
       </div>
     `;
@@ -391,6 +434,17 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
     current.relative_humidity_2m != null ? Math.max(0, Math.min(100, current.relative_humidity_2m)) : null;
   const pressureHpa = Math.round(current.surface_pressure);
   const pressurePercent = (Math.max(950, Math.min(1050, pressureHpa)) - 950) / 100 * 100;
+  const pressureValueLabel =
+    unitSystem === 'imperial'
+      ? `${convertPressureHpa(current.surface_pressure).toFixed(2)} ${pressureUnitLabel()}`
+      : `${pressureHpa} ${pressureUnitLabel()}`;
+  const pressureSecondaryLabel = unitSystem === 'imperial' ? `(${pressureHpa} hPa)` : '(mbar)';
+  const pressureScalePoints = [
+    { hpa: 950, left: 0, transform: 'translateX(0)' },
+    { hpa: 980, left: 30, transform: 'translateX(-50%)' },
+    { hpa: 1020, left: 70, transform: 'translateX(-50%)' },
+    { hpa: 1050, left: 100, transform: 'translateX(-100%)' },
+  ];
 
   // 3-hour pressure tendency — the number meteorologists actually watch for incoming weather,
   // since a fast drop is a reliable short-term storm signal even before the absolute level
@@ -430,7 +484,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
           <span class="wind-segment wind-segment-maroon"></span>
         </div>
         <div class="wind-marker" style="left: ${windPercent.toFixed(1)}%">
-          <span class="wind-marker-value" style="transform: ${markerAnchor(windPercent)}">${current.wind_speed_10m} m/s <span class="wind-marker-value-secondary">(${windKmh} km/h)</span></span>
+          <span class="wind-marker-value" style="transform: ${markerAnchor(windPercent)}">${convertWindSpeedMs(current.wind_speed_10m).toFixed(1)} ${windSpeedUnitLabel()} <span class="wind-marker-value-secondary">(${windKmh} km/h)</span></span>
         </div>
       </div>
       <div class="sub">${getBeaufortDescription(windKmh)}</div>
@@ -496,13 +550,15 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
           <span class="pressure-segment pressure-segment-green"></span>
         </div>
         <div class="pressure-marker" style="left: ${pressurePercent.toFixed(1)}%">
-          <span class="pressure-marker-value" style="transform: ${markerAnchor(pressurePercent)}">${pressureHpa} hPa <span class="pressure-unit-secondary">(mbar)</span></span>
+          <span class="pressure-marker-value" style="transform: ${markerAnchor(pressurePercent)}">${pressureValueLabel} <span class="pressure-unit-secondary">${pressureSecondaryLabel}</span></span>
         </div>
         <div class="pressure-scale">
-          <span class="pressure-scale-tick" style="left: 0%; transform: translateX(0)">950</span>
-          <span class="pressure-scale-tick" style="left: 30%; transform: translateX(-50%)">980</span>
-          <span class="pressure-scale-tick" style="left: 70%; transform: translateX(-50%)">1020</span>
-          <span class="pressure-scale-tick" style="left: 100%; transform: translateX(-100%)">1050</span>
+          ${pressureScalePoints
+            .map(
+              (p) =>
+                `<span class="pressure-scale-tick" style="left: ${p.left}%; transform: ${p.transform}">${unitSystem === 'imperial' ? convertPressureHpa(p.hpa).toFixed(1) : p.hpa}</span>`
+            )
+            .join('')}
         </div>
       </div>
       <div class="pressure-legend">
@@ -622,6 +678,72 @@ function getMoonPhaseInfo(phase) {
   if (p < 0.6875) return { label: 'Waning Gibbous', icon: '🌖' };
   if (p < 0.8125) return { label: 'Last Quarter', icon: '🌗' };
   return { label: 'Waning Crescent', icon: '🌘' };
+}
+
+// Static, ordered to match getMoonPhaseInfo's icon/label output — used only to render the
+// 8-icon row below; the actual phase bucketing logic lives solely in getMoonPhaseInfo so
+// there's one source of truth for which icon a given phase fraction maps to.
+// New Moon is listed at both ends (index 0 and 8) so the row reads as one full cycle, start
+// to finish, rather than looking like it just stops after Waning Crescent.
+const MOON_PHASES = [
+  { label: 'New Moon', icon: '🌑' },
+  { label: 'Waxing Crescent', icon: '🌒' },
+  { label: 'First Quarter', icon: '🌓' },
+  { label: 'Waxing Gibbous', icon: '🌔' },
+  { label: 'Full Moon', icon: '🌕' },
+  { label: 'Waning Gibbous', icon: '🌖' },
+  { label: 'Last Quarter', icon: '🌗' },
+  { label: 'Waning Crescent', icon: '🌘' },
+  { label: 'New Moon', icon: '🌑' },
+];
+
+// Mirrors getMoonPhaseInfo's own boundaries exactly (that function stays the single source of
+// truth for the bucketing), but returns a 0-8 row index instead of a label/icon — needed because
+// New Moon now appears at both ends of the row (0 and 8), so matching by icon/label alone can't
+// tell which end of the cycle a New Moon reading belongs to. Without this, the indicator would
+// always snap back to index 0, never reaching the rightmost icon, breaking the requirement that
+// it travels all the way right before jumping back to the start of the next cycle.
+function getMoonPhaseRowIndex(phase) {
+  const p = ((phase % 1) + 1) % 1;
+  if (p < 0.0625) return 0;
+  if (p < 0.1875) return 1;
+  if (p < 0.3125) return 2;
+  if (p < 0.4375) return 3;
+  if (p < 0.5625) return 4;
+  if (p < 0.6875) return 5;
+  if (p < 0.8125) return 6;
+  if (p < 0.9375) return 7;
+  return 8;
+}
+
+// Independent from buildMoonPath/the Moonrise & moonset card on purpose — a separate section
+// so it can be iterated on without risking that already-working card.
+function buildMoonPhaseSection(daily) {
+  const phase = daily.moon_phase[0];
+  if (phase == null) {
+    return '<p class="moon-phase-section-unavailable">Moon phase unavailable for this location.</p>';
+  }
+
+  const phaseInfo = getMoonPhaseInfo(phase);
+  const currentIndex = getMoonPhaseRowIndex(phase);
+  const indicatorPercent = (currentIndex / (MOON_PHASES.length - 1)) * 100;
+  const icons = MOON_PHASES.map(
+    (p, i) => `
+    <div class="moon-phase-icon${i === currentIndex ? ' moon-phase-icon-current' : ''}">${p.icon}</div>
+  `
+  ).join('');
+
+  return `
+    <div class="moon-phase-endpoints">
+      <span>Start</span>
+      <span>End</span>
+    </div>
+    <div class="moon-phase-row-wrap">
+      <div class="moon-phase-row">${icons}</div>
+      <div class="moon-phase-indicator" style="left: ${indicatorPercent.toFixed(1)}%; transform: ${markerAnchor(indicatorPercent)}">▲</div>
+    </div>
+    <div class="moon-phase-label">${phaseInfo.label}</div>
+  `;
 }
 
 // Builds a chronological {time, type: 'rise'|'set'} event list from parallel moonrise/moonset
@@ -807,7 +929,7 @@ function buildDaily(daily) {
         <div class="day">${label}</div>
         <div class="icon">${icon}</div>
         <div class="prob">${prob != null ? prob + '%' : ''}</div>
-        <div class="temps">${Math.round(daily.temperature_2m_max[i])}&deg; / ${Math.round(daily.temperature_2m_min[i])}&deg;</div>
+        <div class="temps">${Math.round(convertTemp(daily.temperature_2m_max[i]))}&deg; / ${Math.round(convertTemp(daily.temperature_2m_min[i]))}&deg;</div>
       </div>
     `;
   }
@@ -831,6 +953,40 @@ function getClosestHourIndex(hourlyTimes, currentTimeIso) {
   }
 
   return closestIndex;
+}
+
+// Unit conversion + label helpers. Bar-percent math and threshold logic (Beaufort, pollen
+// buckets, etc.) elsewhere always stays computed from the canonical SI values fetched from
+// the API — these only affect the final text shown to the user.
+function convertTemp(celsius) {
+  return unitSystem === 'imperial' ? (celsius * 9) / 5 + 32 : celsius;
+}
+function tempUnitLabel() {
+  return unitSystem === 'imperial' ? 'F' : 'C';
+}
+function convertWindSpeedMs(ms) {
+  return unitSystem === 'imperial' ? ms * 2.236936 : ms;
+}
+function windSpeedUnitLabel() {
+  return unitSystem === 'imperial' ? 'mph' : 'm/s';
+}
+function convertPressureHpa(hpa) {
+  return unitSystem === 'imperial' ? hpa * 0.02952998 : hpa;
+}
+function pressureUnitLabel() {
+  return unitSystem === 'imperial' ? 'inHg' : 'hPa';
+}
+function convertPrecipMm(mm) {
+  return unitSystem === 'imperial' ? mm / 25.4 : mm;
+}
+function precipUnitLabel() {
+  return unitSystem === 'imperial' ? 'in' : 'mm';
+}
+
+// Inches are ~1/25th the magnitude of mm, so 1 decimal place loses far more resolution there —
+// e.g. 0.1mm (a real, visible amount) rounds all the way down to 0.0in at 1 decimal.
+function precipDecimals() {
+  return unitSystem === 'imperial' ? 2 : 1;
 }
 
 function degToCompass(deg) {
@@ -953,11 +1109,15 @@ function buildPollenForecast(air) {
 
     return `
       <div class="pollen-col">
-        <div class="pollen-value">${value.toFixed(1)}</div>
-        <div class="pollen-bar-track">
-          <div class="pollen-bar-fill" style="height: ${fillPercent.toFixed(1)}%; background: ${category.color};"></div>
+        <div class="pollen-scale-peak">${species.peak}</div>
+        <div class="pollen-bar-wrap">
+          <div class="pollen-bar-track">
+            <div class="pollen-bar-fill" style="height: ${fillPercent.toFixed(1)}%; background: ${category.color};"></div>
+          </div>
           <div class="pollen-tick" style="bottom: ${tickPercent.toFixed(1)}%;"></div>
+          <div class="pollen-scale-tick" style="bottom: ${tickPercent.toFixed(1)}%;">${species.seasonStart}</div>
         </div>
+        <div class="pollen-value">${value.toFixed(1)}</div>
         <div class="pollen-category" style="color: ${category.color};">${category.label}</div>
         <div class="pollen-active-window">
           <div>${species.activeStart}</div>
@@ -1511,6 +1671,7 @@ radarMapEl.addEventListener('touchend', endRadarTouch);
 radarMapEl.addEventListener('touchcancel', cancelRadarTouch);
 
 // Show a default city as soon as the page loads.
+applyUnitToggleUI();
 cityInput.value = 'Tampere';
 updateClearButtonVisibility();
 searchCity('Tampere');

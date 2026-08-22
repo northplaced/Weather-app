@@ -10,7 +10,13 @@
 
   <div class="app-layout">
     <main class="card">
-      <h1>Weather App</h1>
+      <div class="card-header">
+        <h1>Weather App</h1>
+        <div class="unit-toggle" role="group" aria-label="Units">
+          <button type="button" class="unit-toggle-btn" data-unit="si">&deg;C</button>
+          <button type="button" class="unit-toggle-btn" data-unit="imperial">&deg;F</button>
+        </div>
+      </div>
 
       <form id="search-form" autocomplete="off">
         <div class="city-input-wrap">
