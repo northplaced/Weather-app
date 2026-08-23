@@ -680,13 +680,13 @@ function buildSunPath(daily, currentTimeIso, latitude, longitude) {
       <text class="sun-arc-side-value" x="${leftX}" y="${baselineY - 6}">${sunriseLabel}</text>
       <text class="sun-arc-side-label" x="${rightX}" y="${baselineY - 24}" text-anchor="end">Sunset</text>
       <text class="sun-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${sunsetLabel}</text>
-      <text class="sun-arc-horizon-label" x="${rightX}" y="${baselineY + 10}" text-anchor="end">Horizon</text>
+      <text class="sun-arc-horizon-label" x="${dayCx}" y="${baselineY - 4}" text-anchor="middle">Horizon</text>
     </svg>
+    ${buildGoldenBlueHour(sunriseDate, sunsetDate)}
     <div class="sun-arc-caption">
       <span class="sun-arc-caption-label">${bottomLabel}</span>
       <span class="sun-arc-caption-value">${bottomValue}</span>
     </div>
-    ${buildGoldenBlueHour(sunriseDate, sunsetDate)}
   `;
 }
 
@@ -706,7 +706,10 @@ function buildGoldenBlueHour(sunriseDate, sunsetDate) {
         <div class="golden-hour-row">🔵 ${formatTime(morningBlueStart)}-${formatTime(sunriseDate)} 🌅</div>
         <div class="golden-hour-row">🟡 ${formatTime(sunriseDate)}-${formatTime(morningGoldenEnd)} ☀️</div>
       </div>
-      <div class="golden-hour-divider">📷 Golden &amp; blue hours</div>
+      <div class="golden-hour-divider">
+        <div>📷 Golden</div>
+        <div>&amp; blue hours</div>
+      </div>
       <div class="golden-hour-col">
         <div class="golden-hour-row">🟡 ${formatTime(eveningGoldenStart)}-${formatTime(sunsetDate)} 🌇</div>
         <div class="golden-hour-row">🔵 ${formatTime(sunsetDate)}-${formatTime(eveningBlueEnd)} 🌙</div>
@@ -1011,7 +1014,7 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
       <text class="moon-arc-side-value" x="${leftX}" y="${baselineY - 6}">${moonriseLabel}</text>
       <text class="moon-arc-side-label" x="${rightX}" y="${baselineY - 24}" text-anchor="end">Moonset</text>
       <text class="moon-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${moonsetLabel}</text>
-      <text class="moon-arc-horizon-label" x="${rightX}" y="${baselineY + 10}" text-anchor="end">Horizon</text>
+      <text class="moon-arc-horizon-label" x="${arcCx}" y="${baselineY - 4}" text-anchor="middle">Horizon</text>
     </svg>
   `;
 }

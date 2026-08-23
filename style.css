@@ -1257,12 +1257,12 @@ button:hover {
 }
 
 .golden-hour-section {
-  margin-top: 14px;
+  margin-top: 2px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: 4px 6px;
 }
 
 .golden-hour-col {
@@ -1272,15 +1272,15 @@ button:hover {
 }
 
 .golden-hour-divider {
-  padding: 0 10px;
-  font-size: 0.7rem;
+  padding: 0 4px;
+  font-size: 0.65rem;
   color: #6b4e34;
   text-align: center;
   white-space: nowrap;
 }
 
 .golden-hour-row {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #4a3320;
   white-space: nowrap;
 }
