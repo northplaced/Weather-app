@@ -667,7 +667,7 @@ function buildSunPath(daily, currentTimeIso, latitude, longitude) {
         <span class="sun-arc-caption-value">${durationLabel}<span class="day-length-trend" id="day-length-trend"></span></span>
       </span>
     </div>
-    <svg class="sun-arc" viewBox="0 2 340 98" preserveAspectRatio="xMidYMid meet" role="img"
+    <svg class="sun-arc" viewBox="0 2 340 90" preserveAspectRatio="xMidYMid meet" role="img"
          aria-label="Sun position: ${durationLabel} of daytime, ${bottomLabel.toLowerCase()} ${bottomValue}, sunrise ${sunriseLabel}, sunset ${sunsetLabel}">
       <line class="sun-arc-baseline" x1="${leftX}" y1="${baselineY}" x2="${rightX}" y2="${baselineY}" />
       <path class="sun-arc-elapsed" d="M ${dayLeftX},${baselineY} A ${dayRx},${dayRy} 0 0,1 ${sunX},${sunY}" />
