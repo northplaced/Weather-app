@@ -389,7 +389,6 @@ function renderWeather(location, forecast, air) {
     </section>
 
     <section>
-      <h3>🌙 Moon phases</h3>
       <div class="moon-phase-section">${buildMoonPhaseSection(daily)}</div>
     </section>
 
@@ -756,15 +755,15 @@ function buildMoonPhaseSection(daily) {
   ).join('');
 
   return `
+    <div class="moon-phase-label">${phaseInfo.label}</div>
+    <div class="moon-phase-row-wrap">
+      <div class="moon-phase-indicator" style="left: ${indicatorPercent.toFixed(1)}%; transform: ${markerAnchor(indicatorPercent)}">▼</div>
+      <div class="moon-phase-row">${icons}</div>
+    </div>
     <div class="moon-phase-endpoints">
       <span>Start</span>
       <span>End</span>
     </div>
-    <div class="moon-phase-row-wrap">
-      <div class="moon-phase-row">${icons}</div>
-      <div class="moon-phase-indicator" style="left: ${indicatorPercent.toFixed(1)}%; transform: ${markerAnchor(indicatorPercent)}">▲</div>
-    </div>
-    <div class="moon-phase-label">${phaseInfo.label}</div>
   `;
 }
 
@@ -899,6 +898,10 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   }
 
   return `
+    <div class="moon-arc-caption">
+      <span class="moon-arc-caption-label">${bottomLabel}</span>
+      <span class="moon-arc-caption-value">${bottomValue}</span>
+    </div>
     <svg class="moon-arc" viewBox="0 2 340 98" preserveAspectRatio="xMidYMid meet" role="img"
          aria-label="Moon phase: ${phaseInfo.label}, ${bottomLabel.toLowerCase()} ${bottomValue}, moonrise ${moonriseLabel}, moonset ${moonsetLabel}">
       <line class="moon-arc-baseline" x1="${leftX}" y1="${baselineY}" x2="${rightX}" y2="${baselineY}" />
@@ -914,10 +917,6 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
       <text class="moon-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${moonsetLabel}</text>
       <text class="moon-arc-horizon-label" x="${rightX}" y="${baselineY + 10}" text-anchor="end">Horizon</text>
     </svg>
-    <div class="moon-arc-caption">
-      <span class="moon-arc-caption-label">${bottomLabel}</span>
-      <span class="moon-arc-caption-value">${bottomValue}</span>
-    </div>
   `;
 }
 
@@ -926,7 +925,7 @@ function buildDaily(daily) {
     <div class="daily-row daily-header">
       <div class="day">${formatDDMMYYYY(daily.time[0])}</div>
       <div class="icon">Weather</div>
-      <div class="prob">🌧️/🌨️</div>
+      <div class="prob prob-header"><span class="prob-icon">🌧️</span>/<span class="prob-icon">🌨️</span></div>
       <div class="temps">Hi / Lo</div>
     </div>
   `;

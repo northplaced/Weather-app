@@ -1347,12 +1347,12 @@ button:hover {
   justify-content: space-between;
   font-size: 0.6rem;
   color: #9c8267;
-  margin-bottom: 2px;
+  margin-top: 2px;
 }
 
 .moon-phase-row-wrap {
   position: relative;
-  padding-bottom: 18px;
+  padding-top: 18px;
 }
 
 .moon-phase-row {
@@ -1374,7 +1374,7 @@ button:hover {
 
 .moon-phase-indicator {
   position: absolute;
-  bottom: 0;
+  top: 0;
   color: #b3714a;
   font-size: 0.8rem;
   line-height: 1;
@@ -1385,7 +1385,7 @@ button:hover {
   font-size: 0.95rem;
   font-weight: bold;
   color: #4a3320;
-  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 /* 10-day forecast */
@@ -1415,7 +1415,9 @@ button:hover {
 }
 
 .daily-row .icon {
+  width: 40px;
   font-size: 1.3rem;
+  text-align: center;
 }
 
 .daily-row .prob {
@@ -1445,6 +1447,17 @@ button:hover {
   font-size: 1.1rem;
   color: #9c8267;
   white-space: nowrap;
+}
+
+.prob-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prob-header .prob-icon {
+  flex: 1;
+  text-align: center;
 }
 
 .day-date {
