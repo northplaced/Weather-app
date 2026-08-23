@@ -1257,19 +1257,32 @@ button:hover {
 }
 
 .golden-hour-section {
-  text-align: center;
   margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
 }
 
-.golden-hour-label {
-  font-size: 0.85rem;
+.golden-hour-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.golden-hour-divider {
+  padding: 0 10px;
+  font-size: 0.7rem;
   color: #6b4e34;
-  margin-bottom: 4px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .golden-hour-row {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   color: #4a3320;
+  white-space: nowrap;
 }
 
 /* Moonrise & moonset arc — separate namespace mirroring .sun-arc*, own night-toned palette */
