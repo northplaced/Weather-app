@@ -1225,6 +1225,30 @@ button:hover {
   color: #4a3320;
 }
 
+.sun-arc-caption-value-wrap {
+  display: block;
+}
+
+.sun-arc-caption-value-wrap .sun-arc-caption-value {
+  display: inline-block;
+  position: relative;
+}
+
+.day-length-trend {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 4px;
+  font-size: 0.65rem;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.day-length-trend strong {
+  font-weight: bold;
+}
+
 .sun-arc-unavailable {
   color: #6b4e34;
   font-size: 0.85rem;

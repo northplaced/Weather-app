@@ -380,7 +380,7 @@ function renderWeather(location, forecast, air) {
         <h3>☀️ Sunrise &amp; sunset</h3>
         <span class="local-time">Local time ${formatTime(current.time)}</span>
       </div>
-      <div class="sun-arc-wrap">${buildSunPath(daily, current.time)}</div>
+      <div class="sun-arc-wrap">${buildSunPath(daily, current.time, location.latitude, location.longitude)}</div>
     </section>
 
     <section>
@@ -604,7 +604,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
 // labels flanking it, tick marks at its base, and a dashed horizon line running the full
 // width behind everything. The sun marker's (x,y) is computed with the same ellipse math
 // used for the arc's "A" path command, so it always sits exactly on the drawn curve.
-function buildSunPath(daily, currentTimeIso) {
+function buildSunPath(daily, currentTimeIso, latitude, longitude) {
   const sunriseIso = daily.sunrise[0];
   const sunsetIso = daily.sunset[0];
 
@@ -617,6 +617,7 @@ function buildSunPath(daily, currentTimeIso) {
   const now = new Date(currentTimeIso);
 
   const dayMs = sunsetDate - sunriseDate;
+  refineDayLengthTrend(latitude, longitude, dayMs);
   const elapsedMs = now - sunriseDate;
   // Sun position along the arc; before sunrise/after sunset it's pinned to the sunrise/sunset
   // tick rather than continuing past it (we have no data for a night-side path).
@@ -662,7 +663,9 @@ function buildSunPath(daily, currentTimeIso) {
   return `
     <div class="sun-arc-caption">
       <span class="sun-arc-caption-label">Length of day</span>
-      <span class="sun-arc-caption-value">${durationLabel}</span>
+      <span class="sun-arc-caption-value-wrap">
+        <span class="sun-arc-caption-value">${durationLabel}<span class="day-length-trend" id="day-length-trend"></span></span>
+      </span>
     </div>
     <svg class="sun-arc" viewBox="0 2 340 98" preserveAspectRatio="xMidYMid meet" role="img"
          aria-label="Sun position: ${durationLabel} of daytime, ${bottomLabel.toLowerCase()} ${bottomValue}, sunrise ${sunriseLabel}, sunset ${sunsetLabel}">
@@ -684,6 +687,67 @@ function buildSunPath(daily, currentTimeIso) {
       <span class="sun-arc-caption-value">${bottomValue}</span>
     </div>
   `;
+}
+
+// Best-effort day-length trend badge next to the bottom sun-arc caption's bold value. Fetches
+// yesterday's sunrise/sunset in an isolated request rather than widening the shared forecast
+// fetch with past_days — same reasoning as refineMoonHorizonNote: every other feature (sun arc,
+// 10-day list, etc.) assumes daily index 0 = today, and this keeps that assumption intact.
+async function refineDayLengthTrend(latitude, longitude, todayDayMs) {
+  try {
+    const params = [
+      `latitude=${latitude}`,
+      `longitude=${longitude}`,
+      `daily=sunrise,sunset`,
+      `timezone=auto`,
+      `past_days=1`,
+      `forecast_days=1`,
+    ].join('&');
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    if (!response.ok) return;
+    const data = await response.json();
+    const yesterdaySunrise = data.daily.sunrise[0];
+    const yesterdaySunset = data.daily.sunset[0];
+    if (!yesterdaySunrise || !yesterdaySunset) return;
+
+    const yesterdayDayMs = new Date(yesterdaySunset) - new Date(yesterdaySunrise);
+    const diffSeconds = Math.round((todayDayMs - yesterdayDayMs) / 1000);
+    const el = document.getElementById('day-length-trend');
+    if (el) applyDayLengthTrend(el, diffSeconds);
+  } catch {
+    // Best-effort refinement only — leave the badge empty on failure.
+  }
+}
+
+// Mirrors the pressure-trend indicator's arrow + colored delta styling ("↑ Rising (+2.1 hPa/3h)").
+function applyDayLengthTrend(el, diffSeconds) {
+  const absSeconds = Math.abs(diffSeconds);
+  const minutes = Math.floor(absSeconds / 60);
+  const seconds = absSeconds % 60;
+
+  let arrow;
+  let word;
+  let color;
+  let bracket = '';
+  if (absSeconds < 10) {
+    arrow = '→';
+    word = 'Steady';
+    color = '#6b4e34';
+  } else if (diffSeconds > 0) {
+    arrow = '↑';
+    word = 'Longer';
+    color = '#6f9c5f';
+    bracket = ` (+${minutes}m ${seconds}s)`;
+  } else {
+    arrow = '↓';
+    word = 'Shorter';
+    color = '#b3574a';
+    bracket = ` (-${minutes}m ${seconds}s)`;
+  }
+
+  el.innerHTML = `${arrow} <strong>${word}</strong>${bracket}`;
+  el.style.color = color;
+  el.title = absSeconds < 10 ? 'Same length as yesterday' : `${minutes}m ${seconds}s ${word.toLowerCase()} than yesterday`;
 }
 
 // Buckets Open-Meteo's 0-1 moon_phase fraction into the 8 traditional phase names, each
