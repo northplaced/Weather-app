@@ -1256,6 +1256,22 @@ button:hover {
   margin: 8px 0;
 }
 
+.golden-hour-section {
+  text-align: center;
+  margin-top: 14px;
+}
+
+.golden-hour-label {
+  font-size: 0.85rem;
+  color: #6b4e34;
+  margin-bottom: 4px;
+}
+
+.golden-hour-row {
+  font-size: 0.85rem;
+  color: #4a3320;
+}
+
 /* Moonrise & moonset arc — separate namespace mirroring .sun-arc*, own night-toned palette */
 
 .moon-arc-wrap {
@@ -1409,6 +1425,14 @@ button:hover {
   font-size: 0.95rem;
   font-weight: bold;
   color: #4a3320;
+  margin-bottom: 2px;
+}
+
+.moon-phase-label-local {
+  text-align: center;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: #6b4e34;
   margin-bottom: 6px;
 }
 

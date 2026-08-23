@@ -686,6 +686,26 @@ function buildSunPath(daily, currentTimeIso, latitude, longitude) {
       <span class="sun-arc-caption-label">${bottomLabel}</span>
       <span class="sun-arc-caption-value">${bottomValue}</span>
     </div>
+    ${buildGoldenBlueHour(sunriseDate, sunsetDate)}
+  `;
+}
+
+// Golden/blue hour windows, approximated with fixed offsets from sunrise/sunset rather than
+// true solar-elevation math (would need a library — see the no-dependencies rule). Blue hour
+// sits fully on the night side of sunrise/sunset, golden hour fully on the day side, so the
+// transition point can just be sunrise/sunset itself rather than an invented buffer.
+function buildGoldenBlueHour(sunriseDate, sunsetDate) {
+  const morningBlueStart = new Date(sunriseDate.getTime() - 30 * 60000);
+  const morningGoldenEnd = new Date(sunriseDate.getTime() + 60 * 60000);
+  const eveningGoldenStart = new Date(sunsetDate.getTime() - 60 * 60000);
+  const eveningBlueEnd = new Date(sunsetDate.getTime() + 30 * 60000);
+
+  return `
+    <div class="golden-hour-section">
+      <div class="golden-hour-label">📷 Golden &amp; blue hour</div>
+      <div class="golden-hour-row">🌅 ${formatTime(morningBlueStart)} 🔷 ${formatTime(sunriseDate)} 🔶 ${formatTime(morningGoldenEnd)} ☀️</div>
+      <div class="golden-hour-row">🌇 ${formatTime(eveningGoldenStart)} 🔶 ${formatTime(sunsetDate)} 🔷 ${formatTime(eveningBlueEnd)} 🌙</div>
+    </div>
   `;
 }
 
@@ -755,14 +775,14 @@ function applyDayLengthTrend(el, diffSeconds) {
 // with a 1/8-wide band around it.
 function getMoonPhaseInfo(phase) {
   const p = ((phase % 1) + 1) % 1;
-  if (p < 0.0625 || p >= 0.9375) return { label: 'New Moon', icon: '🌑' };
-  if (p < 0.1875) return { label: 'Waxing Crescent', icon: '🌒' };
-  if (p < 0.3125) return { label: 'First Quarter', icon: '🌓' };
-  if (p < 0.4375) return { label: 'Waxing Gibbous', icon: '🌔' };
-  if (p < 0.5625) return { label: 'Full Moon', icon: '🌕' };
-  if (p < 0.6875) return { label: 'Waning Gibbous', icon: '🌖' };
-  if (p < 0.8125) return { label: 'Last Quarter', icon: '🌗' };
-  return { label: 'Waning Crescent', icon: '🌘' };
+  if (p < 0.0625 || p >= 0.9375) return { label: 'New Moon', local: 'Uusikuu', icon: '🌑' };
+  if (p < 0.1875) return { label: 'Waxing Crescent', local: 'Kasvava sirppi', icon: '🌒' };
+  if (p < 0.3125) return { label: 'First Quarter', local: 'Ensimmäinen neljännes', icon: '🌓' };
+  if (p < 0.4375) return { label: 'Waxing Gibbous', local: 'Kasvava kupera kuu', icon: '🌔' };
+  if (p < 0.5625) return { label: 'Full Moon', local: 'Täysikuu', icon: '🌕' };
+  if (p < 0.6875) return { label: 'Waning Gibbous', local: 'Vähenevä kupera kuu', icon: '🌖' };
+  if (p < 0.8125) return { label: 'Last Quarter', local: 'Viimeinen neljännes', icon: '🌗' };
+  return { label: 'Waning Crescent', local: 'Vähenevä sirppi', icon: '🌘' };
 }
 
 // Static, ordered to match getMoonPhaseInfo's icon/label output — used only to render the
@@ -811,7 +831,12 @@ function buildMoonPhaseSection(daily) {
 
   const phaseInfo = getMoonPhaseInfo(phase);
   const currentIndex = getMoonPhaseRowIndex(phase);
-  const indicatorPercent = (currentIndex / (MOON_PHASES.length - 1)) * 100;
+  // Raw phase fraction, not the bucket index — the two New Moon buckets are half-width
+  // (6.25% each) and the other seven are exactly 12.5%, matching the icon row's even spacing,
+  // so this lands the indicator continuously within the current icon's slot instead of
+  // snapping between 9 fixed stops, while the highlighted icon still comes from the bucket.
+  const normalizedPhase = ((phase % 1) + 1) % 1;
+  const indicatorPercent = normalizedPhase * 100;
   const icons = MOON_PHASES.map(
     (p, i) => `
     <div class="moon-phase-icon${i === currentIndex ? ' moon-phase-icon-current' : ''}">${p.icon}</div>
@@ -820,13 +845,14 @@ function buildMoonPhaseSection(daily) {
 
   return `
     <div class="moon-phase-label">${phaseInfo.label}</div>
+    <div class="moon-phase-label-local">(${phaseInfo.local})</div>
     <div class="moon-phase-row-wrap">
       <div class="moon-phase-indicator" style="left: ${indicatorPercent.toFixed(1)}%; transform: ${markerAnchor(indicatorPercent)}">▼</div>
       <div class="moon-phase-row">${icons}</div>
     </div>
     <div class="moon-phase-endpoints">
-      <span>Start</span>
-      <span>End</span>
+      <span>New Moon</span>
+      <span>Old Moon</span>
     </div>
   `;
 }
