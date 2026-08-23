@@ -699,6 +699,16 @@ button:hover {
   pointer-events: none;
 }
 
+/* Snow reuses the same box/bar/label structure as rain, just in a distinguishing color so the
+   two substances don't read as the same thing when scrolling through mixed-precipitation hours. */
+.hour-rain-box-snow .hour-rain-fill {
+  background: #9fb3c8;
+}
+
+.hour-rain-box-snow .hour-rain-value {
+  color: #6b7f91;
+}
+
 /* Details grid */
 
 .details-grid {
@@ -1433,6 +1443,8 @@ button:hover {
 
 .daily-header .prob {
   font-size: 1.1rem;
+  color: #9c8267;
+  white-space: nowrap;
 }
 
 .day-date {

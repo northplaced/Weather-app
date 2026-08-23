@@ -63,6 +63,10 @@ const weatherDescriptions = {
 };
 
 // Maps the same weather codes to an emoji icon, using is_day to pick sun vs moon.
+// Shared with buildHourly, which uses it to decide whether an hour's precipitation box should
+// show snowfall (cm) instead of rainfall (mm).
+const SNOW_WEATHER_CODES = [71, 73, 75, 77, 85, 86];
+
 function getWeatherIcon(code, isDay) {
   if (code === 0) return isDay ? '☀️' : '🌙';
   if (code === 1) return isDay ? '🌤️' : '🌙';
@@ -71,7 +75,7 @@ function getWeatherIcon(code, isDay) {
   if (code === 45 || code === 48) return '🌫️';
   if ([51, 53, 55, 56, 57].includes(code)) return '🌦️';
   if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return '🌧️';
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return '🌨️';
+  if (SNOW_WEATHER_CODES.includes(code)) return '🌨️';
   if ([95, 96, 99].includes(code)) return '⛈️';
   return '❓';
 }
@@ -307,7 +311,7 @@ async function getForecast(latitude, longitude) {
     `latitude=${latitude}`,
     `longitude=${longitude}`,
     `current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day`,
-    `hourly=temperature_2m,weather_code,precipitation_probability,precipitation,visibility,uv_index,is_day,surface_pressure`,
+    `hourly=temperature_2m,weather_code,precipitation_probability,precipitation,snowfall,visibility,uv_index,is_day,surface_pressure`,
     `daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,moonrise,moonset,moon_phase`,
     `timezone=auto`,
     `wind_speed_unit=ms`,
@@ -339,7 +343,14 @@ function renderWeather(location, forecast, air) {
   const nowIndex = getClosestHourIndex(hourly.time, current.time);
   const description = weatherDescriptions[current.weather_code] || 'Unknown conditions';
   const precipNow = hourly.precipitation_probability[nowIndex];
-  const rainNow = hourly.precipitation[nowIndex];
+  const isSnowyNow = SNOW_WEATHER_CODES.includes(current.weather_code);
+  const amountNow = isSnowyNow ? hourly.snowfall[nowIndex] : hourly.precipitation[nowIndex];
+  const amountNowLabel =
+    amountNow != null
+      ? (isSnowyNow
+          ? convertSnowCm(amountNow).toFixed(precipDecimals()) + ' ' + snowUnitLabel()
+          : convertPrecipMm(amountNow).toFixed(precipDecimals()) + ' ' + precipUnitLabel()) + ' &middot; '
+      : '';
 
   result.innerHTML = `
     <div class="current">
@@ -350,7 +361,7 @@ function renderWeather(location, forecast, air) {
         <p class="feels-like">Feels like ${Math.round(convertTemp(current.apparent_temperature))}&deg;${tempUnitLabel()}</p>
         <p class="condition">${description}</p>
         <p class="hi-lo">High ${Math.round(convertTemp(daily.temperature_2m_max[0]))}&deg; &middot; Low ${Math.round(convertTemp(daily.temperature_2m_min[0]))}&deg;</p>
-        <p class="current-precip">${rainNow != null ? convertPrecipMm(rainNow).toFixed(precipDecimals()) + ' ' + precipUnitLabel() + ' &middot; ' : ''}${precipNow != null ? precipNow + '%' : ''}</p>
+        <p class="current-precip">${amountNowLabel}${precipNow != null ? precipNow + '%' : ''}</p>
       </div>
     </div>
 
@@ -398,18 +409,29 @@ function buildHourly(hourly, nowIndex) {
     const label = i === nowIndex ? 'Now' : time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const icon = getWeatherIcon(hourly.weather_code[i], hourly.is_day[i] === 1);
     const precip = hourly.precipitation_probability[i];
-    const rainMm = hourly.precipitation[i];
-    const rainFillPercent = rainMm != null ? Math.min(100, (rainMm / 5) * 100) : 0; // 5mm/h ≈ heavy rain, caps the fill
+    // When the hour's own weather is snow, the same box reports snowfall (cm) instead of
+    // rainfall (mm) — showing rain mm during a snowy hour is both the wrong substance and
+    // usually near-zero, since it's snow's liquid-equivalent, not its actual accumulation.
+    const isSnowy = SNOW_WEATHER_CODES.includes(hourly.weather_code[i]);
+    const amount = isSnowy ? hourly.snowfall[i] : hourly.precipitation[i];
+    const amountCap = isSnowy ? 3 : 5; // cm/h vs mm/h "heavy" reference used to scale the fill
+    const amountFillPercent = amount != null ? Math.min(100, (amount / amountCap) * 100) : 0;
+    const amountLabel =
+      amount != null
+        ? isSnowy
+          ? convertSnowCm(amount).toFixed(precipDecimals()) + ' ' + snowUnitLabel()
+          : convertPrecipMm(amount).toFixed(precipDecimals()) + ' ' + precipUnitLabel()
+        : '';
 
     html += `
       <div class="hour-item">
         <div class="hour-label">${label}</div>
         <div class="hour-temp">${Math.round(convertTemp(hourly.temperature_2m[i]))}&deg;</div>
         <div class="hour-icon">${icon}</div>
-        <div class="hour-rain-box">
+        <div class="hour-rain-box${isSnowy ? ' hour-rain-box-snow' : ''}">
           <div class="hour-rain-bar-zone">
-            <div class="hour-rain-fill" style="height: ${rainFillPercent.toFixed(1)}%;">
-              <div class="hour-rain-value">${rainMm != null ? convertPrecipMm(rainMm).toFixed(precipDecimals()) + ' ' + precipUnitLabel() : ''}</div>
+            <div class="hour-rain-fill" style="height: ${amountFillPercent.toFixed(1)}%;">
+              <div class="hour-rain-value">${amountLabel}</div>
             </div>
           </div>
         </div>
@@ -834,9 +856,6 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
     const note = state ? moonHorizonNote(state) : 'Checking whether the moon is above or below the horizon…';
 
     return `
-      <div class="moon-arc-caption">
-        <span class="moon-phase-value">${phaseInfo.icon} ${phaseInfo.label}</span>
-      </div>
       <p class="moon-arc-unavailable" id="moon-horizon-note">${note}</p>
     `;
   }
@@ -880,9 +899,6 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   }
 
   return `
-    <div class="moon-arc-caption">
-      <span class="moon-phase-value">${phaseInfo.icon} ${phaseInfo.label}</span>
-    </div>
     <svg class="moon-arc" viewBox="0 2 340 98" preserveAspectRatio="xMidYMid meet" role="img"
          aria-label="Moon phase: ${phaseInfo.label}, ${bottomLabel.toLowerCase()} ${bottomValue}, moonrise ${moonriseLabel}, moonset ${moonsetLabel}">
       <line class="moon-arc-baseline" x1="${leftX}" y1="${baselineY}" x2="${rightX}" y2="${baselineY}" />
@@ -910,7 +926,7 @@ function buildDaily(daily) {
     <div class="daily-row daily-header">
       <div class="day">${formatDDMMYYYY(daily.time[0])}</div>
       <div class="icon">Weather</div>
-      <div class="prob">🌧️</div>
+      <div class="prob">🌧️/🌨️</div>
       <div class="temps">Hi / Lo</div>
     </div>
   `;
@@ -987,6 +1003,13 @@ function precipUnitLabel() {
 // e.g. 0.1mm (a real, visible amount) rounds all the way down to 0.0in at 1 decimal.
 function precipDecimals() {
   return unitSystem === 'imperial' ? 2 : 1;
+}
+
+function convertSnowCm(cm) {
+  return unitSystem === 'imperial' ? cm / 2.54 : cm;
+}
+function snowUnitLabel() {
+  return unitSystem === 'imperial' ? 'in' : 'cm';
 }
 
 function degToCompass(deg) {
