@@ -832,6 +832,12 @@ function getMoonPhaseRowIndex(phase) {
 
 // Independent from buildMoonPath/the Moonrise & moonset card on purpose — a separate section
 // so it can be iterated on without risking that already-working card.
+// Average length of a lunar cycle (new moon to new moon), in days. The real synodic month
+// varies by roughly ±0.3 days from this due to the moon's elliptical orbit, so dates computed
+// from it drift a little across the row — fine for a labeled calendar reference, not precise
+// enough for anything time-critical.
+const SYNODIC_MONTH_DAYS = 29.530588853;
+
 function buildMoonPhaseSection(daily) {
   const phase = daily.moon_phase[0];
   if (phase == null) {
@@ -846,21 +852,39 @@ function buildMoonPhaseSection(daily) {
   // snapping between 9 fixed stops, while the highlighted icon still comes from the bucket.
   const normalizedPhase = ((phase % 1) + 1) % 1;
   const indicatorPercent = normalizedPhase * 100;
+
+  // Illuminated fraction from the phase angle: 0 at New Moon, 100 at Full Moon, back to 0 at
+  // the next New Moon — the standard (1 - cos(2π·phase)) / 2 approximation.
+  const illumination = ((1 - Math.cos(2 * Math.PI * normalizedPhase)) / 2) * 100;
+
+  // Calendar date for each of the 9 row icons, derived from today's phase position rather than
+  // fetched — the row spans one full cycle, and daily.moon_phase only covers the 10-day forecast
+  // window, which won't reach both the most recent New Moon and the next one in most cases.
+  const today = new Date(daily.time[0]);
+  const daysSinceCycleStart = normalizedPhase * SYNODIC_MONTH_DAYS;
+  const cycleStartMs = today.getTime() - daysSinceCycleStart * 86400000;
+
   const icons = MOON_PHASES.map(
     (p, i) => `
     <div class="moon-phase-icon${i === currentIndex ? ' moon-phase-icon-current' : ''}">${p.icon}</div>
   `
   ).join('');
+  const dates = MOON_PHASES.map((p, i) => {
+    const iconDate = new Date(cycleStartMs + (i / 8) * SYNODIC_MONTH_DAYS * 86400000);
+    return `<div class="moon-phase-date">${formatDDMMDot(iconDate)}</div>`;
+  }).join('');
 
   return `
     <div class="moon-phase-label">${phaseInfo.label}</div>
     <div class="moon-phase-label-local">(${phaseInfo.local})</div>
     <div class="moon-phase-row-wrap">
-      <div class="moon-phase-indicator" style="left: ${indicatorPercent.toFixed(1)}%; transform: ${markerAnchor(indicatorPercent)}">▼</div>
+      <div class="moon-phase-indicator" style="left: ${indicatorPercent.toFixed(1)}%; transform: ${markerAnchor(indicatorPercent)}"><span class="moon-phase-illumination ${normalizedPhase < 0.5 ? 'moon-phase-illumination-right' : 'moon-phase-illumination-left'}">${illumination.toFixed(1)}%</span>▼</div>
       <div class="moon-phase-row">${icons}</div>
     </div>
+    <div class="moon-phase-dates">${dates}</div>
     <div class="moon-phase-endpoints">
       <span>New Moon</span>
+      <span class="moon-phase-endpoint-center">Full Moon</span>
       <span>Old Moon</span>
     </div>
   `;
@@ -959,11 +983,38 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   }
 
   const moonriseDate = new Date(moonriseIso);
-  const moonsetDate = new Date(moonsetIso);
+  let moonsetDate = new Date(moonsetIso);
   const now = new Date(currentTimeIso);
 
-  const upMs = moonsetDate - moonriseDate;
-  const elapsedMs = now - moonriseDate;
+  // Some days the moon sets early — the tail of the previous night's rise — and then rises
+  // again later that same day, so today's own moonset[0] falls BEFORE moonrise[0]
+  // chronologically. If we're already past that second rise, moonset[0] is stale (it belongs
+  // to the period that already ended); the real end of the current up-period is tomorrow's
+  // moonset.
+  if (moonsetDate <= moonriseDate && now >= moonriseDate && daily.moonset[1]) {
+    moonsetDate = new Date(daily.moonset[1]);
+  }
+
+  // Mirror case: still up from a rise that happened before the fetched window (e.g. last
+  // night), so today's early moonset is real but has no matching moonrise in `daily.moonrise`
+  // to pair it with. Confirm via the same event-based inference used for the circumpolar case.
+  // Pinning the marker at the moonset tick (the sun's before-sunrise/after-sunset convention)
+  // doesn't fit here — the sun's case is pinned because it genuinely hasn't started or has
+  // already finished its arc, but the moon here is actively mid-arc, so sitting it right at the
+  // moonset tick falsely reads as "setting right now." Instead, substitute an estimated rise
+  // time using the moon's average time above the horizon (~12h25m, roughly half its 24h50m day)
+  // so the marker lands at a plausible mid-arc position — this estimate never surfaces in any
+  // displayed label, it only shapes where the dot sits.
+  const AVERAGE_MOON_UP_MS = (12 * 60 + 25) * 60000;
+  let forcedUp = false;
+  let arcMoonriseDate = moonriseDate;
+  if (moonsetDate <= moonriseDate && now < moonriseDate) {
+    forcedUp = inferMoonState(collectMoonEvents(daily.moonrise, daily.moonset), now) === 'up';
+    if (forcedUp) arcMoonriseDate = new Date(moonsetDate.getTime() - AVERAGE_MOON_UP_MS);
+  }
+
+  const upMs = moonsetDate - arcMoonriseDate;
+  const elapsedMs = now - arcMoonriseDate;
   const t = Math.max(0, Math.min(1, upMs > 0 ? elapsedMs / upMs : 0));
 
   const leftX = 4;
@@ -980,12 +1031,16 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   const moonY = (baselineY - arcRy * Math.sin(angle)).toFixed(1);
 
   const moonriseLabel = formatTime(moonriseIso);
-  const moonsetLabel = formatTime(moonsetIso);
+  const moonsetLabel = formatTime(moonsetDate);
 
   let bottomLabel;
   let bottomValue;
 
-  if (now < moonriseDate || now > moonsetDate) {
+  if (forcedUp) {
+    const remainingMin = Math.max(0, Math.round((moonsetDate - now) / 60000));
+    bottomLabel = 'Moonset in';
+    bottomValue = `${Math.floor(remainingMin / 60)}h ${remainingMin % 60}m`;
+  } else if (now < moonriseDate || now > moonsetDate) {
     const nextMoonriseIso = now < moonriseDate ? moonriseIso : daily.moonrise[1];
     const untilMoonriseMin = nextMoonriseIso ? Math.max(0, Math.round((new Date(nextMoonriseIso) - now) / 60000)) : 0;
     bottomLabel = 'Moonrise in';
@@ -1036,12 +1091,16 @@ function buildDaily(daily) {
         ? 'Today'
         : `${date.toLocaleDateString([], { weekday: 'short' })} <span class="day-date">${formatDDMM(daily.time[i])}</span>`;
     const icon = getWeatherIcon(daily.weather_code[i], true);
+    const condition = weatherDescriptions[daily.weather_code[i]] || '';
     const prob = daily.precipitation_probability_max[i];
 
     html += `
       <div class="daily-row">
         <div class="day">${label}</div>
-        <div class="icon">${icon}</div>
+        <div class="icon">
+          <div>${icon}</div>
+          <div class="daily-condition">${condition}</div>
+        </div>
         <div class="prob">${prob != null ? prob + '%' : ''}</div>
         <div class="temps">${Math.round(convertTemp(daily.temperature_2m_max[i]))}&deg; / ${Math.round(convertTemp(daily.temperature_2m_min[i]))}&deg;</div>
       </div>
@@ -1128,6 +1187,10 @@ function formatDDMM(iso) {
 function formatDDMMYYYY(iso) {
   const d = new Date(iso);
   return `${formatDDMM(iso)}/${d.getFullYear()}`;
+}
+
+function formatDDMMDot(date) {
+  return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.`;
 }
 
 function getUvLabel(uv) {
