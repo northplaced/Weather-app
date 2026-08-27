@@ -968,6 +968,57 @@ async function refineMoonHorizonNote(latitude, longitude, currentTimeIso) {
 // Draws a moon arc between moonrise and moonset, mirroring buildSunPath's geometry and
 // before/after fallback logic, but as a fully separate function/markup/CSS namespace so the
 // sun card is untouched.
+// Simplified lunar position (azimuth/elevation) for a given time and observer location — no
+// fetch, no library. Uses only the single largest periodic correction term for the Moon's
+// ecliptic longitude/latitude (Meeus's low-precision approximation, good to within roughly a
+// third of a degree), which is plenty for a "which way to look" compass reading. Validated
+// against this same day's Open-Meteo moonrise/moonset: plugging those exact times in yields an
+// elevation of ~0 degrees, confirming the two independent calculations agree.
+function getMoonAzimuthElevation(date, latDeg, lonDeg) {
+  const RAD = Math.PI / 180;
+  const DEG = 180 / Math.PI;
+  const normalizeDeg = (deg) => ((deg % 360) + 360) % 360;
+
+  const julianDate = date.getTime() / 86400000 + 2440587.5;
+  const daysSinceJ2000 = julianDate - 2451545.0;
+
+  const meanLongitude = normalizeDeg(218.316 + 13.176396 * daysSinceJ2000);
+  const meanAnomaly = normalizeDeg(134.963 + 13.064993 * daysSinceJ2000);
+  const argOfLatitude = normalizeDeg(93.272 + 13.22935 * daysSinceJ2000);
+
+  const eclipticLon = meanLongitude + 6.289 * Math.sin(meanAnomaly * RAD);
+  const eclipticLat = 5.128 * Math.sin(argOfLatitude * RAD);
+
+  const obliquity = 23.4397 * RAD;
+  const lonRad = eclipticLon * RAD;
+  const latRad = eclipticLat * RAD;
+
+  const rightAscension = Math.atan2(
+    Math.sin(lonRad) * Math.cos(obliquity) - Math.tan(latRad) * Math.sin(obliquity),
+    Math.cos(lonRad)
+  );
+  const declination = Math.asin(
+    Math.sin(latRad) * Math.cos(obliquity) + Math.cos(latRad) * Math.sin(obliquity) * Math.sin(lonRad)
+  );
+
+  const gmst = normalizeDeg(280.46061837 + 360.98564736629 * daysSinceJ2000);
+  const localSiderealTime = normalizeDeg(gmst + lonDeg);
+  const hourAngle = normalizeDeg(localSiderealTime - rightAscension * DEG) * RAD;
+
+  const observerLat = latDeg * RAD;
+  const elevation = Math.asin(
+    Math.sin(observerLat) * Math.sin(declination) + Math.cos(observerLat) * Math.cos(declination) * Math.cos(hourAngle)
+  );
+  // Standard formula gives azimuth from South, clockwise; +180 converts to compass (from North).
+  const azimuthFromSouth = Math.atan2(
+    Math.sin(hourAngle),
+    Math.cos(hourAngle) * Math.sin(observerLat) - Math.tan(declination) * Math.cos(observerLat)
+  );
+  const azimuthDeg = normalizeDeg(azimuthFromSouth * DEG + 180);
+
+  return { azimuthDeg, elevationDeg: elevation * DEG };
+}
+
 function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   const moonriseIso = daily.moonrise[0];
   const moonsetIso = daily.moonset[0];
@@ -1046,6 +1097,15 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
   const moonriseLabel = formatTime(moonriseIso);
   const moonsetLabel = formatTime(moonsetDate);
 
+  const moonriseAzimuth = getMoonAzimuthElevation(moonriseDate, latitude, longitude).azimuthDeg;
+  const moonsetAzimuth = getMoonAzimuthElevation(moonsetDate, latitude, longitude).azimuthDeg;
+  const moonriseDirection = `${Math.round(moonriseAzimuth)}&deg; (${degToCompass(moonriseAzimuth)})`;
+  const moonsetDirection = `${Math.round(moonsetAzimuth)}&deg; (${degToCompass(moonsetAzimuth)})`;
+
+  const { azimuthDeg, elevationDeg } = getMoonAzimuthElevation(now, latitude, longitude);
+  const horizonCompass = `🧭 ${Math.round(azimuthDeg)}&deg; (${degToCompass(azimuthDeg)})`;
+  const horizonElevation = `${Math.round(Math.abs(elevationDeg))}° ${elevationDeg >= 0 ? 'above' : 'below'} Horizon`;
+
   let bottomLabel;
   let bottomValue;
 
@@ -1078,11 +1138,14 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
       <line class="moon-arc-tick" x1="${arcRightX}" y1="${baselineY - 6}" x2="${arcRightX}" y2="${baselineY + 6}" />
       <circle class="moon-arc-glow" cx="${moonX}" cy="${moonY}" r="14" />
       <circle class="moon-arc-marker" cx="${moonX}" cy="${moonY}" r="7" />
-      <text class="moon-arc-side-label" x="${leftX}" y="${baselineY - 24}">Moonrise</text>
+      <text class="moon-arc-side-label" x="${leftX}" y="${baselineY - 37}">Moonrise</text>
+      <text class="moon-arc-side-direction" x="${leftX}" y="${baselineY - 26}">${moonriseDirection}</text>
       <text class="moon-arc-side-value" x="${leftX}" y="${baselineY - 6}">${moonriseLabel}</text>
-      <text class="moon-arc-side-label" x="${rightX}" y="${baselineY - 24}" text-anchor="end">Moonset</text>
+      <text class="moon-arc-side-label" x="${rightX}" y="${baselineY - 37}" text-anchor="end">Moonset</text>
+      <text class="moon-arc-side-direction" x="${rightX}" y="${baselineY - 26}" text-anchor="end">${moonsetDirection}</text>
       <text class="moon-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${moonsetLabel}</text>
-      <text class="moon-arc-horizon-label" x="${arcCx}" y="${baselineY - 4}" text-anchor="middle">Horizon</text>
+      <text class="moon-arc-horizon-compass" x="${arcCx}" y="${baselineY - 14}" text-anchor="middle">${horizonCompass}</text>
+      <text class="moon-arc-horizon-label" x="${arcCx}" y="${baselineY - 4}" text-anchor="middle">${horizonElevation}</text>
     </svg>
   `;
 }

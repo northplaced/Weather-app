@@ -1365,7 +1365,17 @@ button:hover {
   fill: #4a3320;
 }
 
+.moon-arc-side-direction {
+  font-size: 9px;
+  fill: #9c8267;
+}
+
 .moon-arc-horizon-label {
+  font-size: 9px;
+  fill: #6b4e34;
+}
+
+.moon-arc-horizon-compass {
   font-size: 9px;
   fill: #6b4e34;
 }
