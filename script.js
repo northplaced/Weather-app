@@ -337,6 +337,8 @@ async function getAirQuality(latitude, longitude) {
   }
 }
 
+let hourlyForecastClockInterval = null;
+
 function renderWeather(location, forecast, air) {
   const { current, hourly, daily } = forecast;
   const isDay = current.is_day === 1;
@@ -355,6 +357,7 @@ function renderWeather(location, forecast, air) {
   result.innerHTML = `
     <div class="current">
       <h2>${escapeHtml(location.name)}, ${escapeHtml(location.country)}</h2>
+      <p class="current-clock" id="hourly-forecast-clock">${formatWeekdayDateTime(new Date())}</p>
       <div class="current-columns">
         <p class="temp-big">${Math.round(convertTemp(current.temperature_2m))}&deg;${tempUnitLabel()}</p>
         <div class="current-icon">${getWeatherIcon(current.weather_code, isDay)}</div>
@@ -397,6 +400,16 @@ function renderWeather(location, forecast, air) {
       <div class="daily-list">${buildDaily(daily)}</div>
     </section>
   `;
+
+  clearInterval(hourlyForecastClockInterval);
+  hourlyForecastClockInterval = setInterval(() => {
+    const clockEl = document.getElementById('hourly-forecast-clock');
+    if (!clockEl) {
+      clearInterval(hourlyForecastClockInterval);
+      return;
+    }
+    clockEl.textContent = formatWeekdayDateTime(new Date());
+  }, 1000);
 }
 
 function buildHourly(hourly, nowIndex) {
@@ -577,7 +590,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
           ${pressureScalePoints
             .map(
               (p) =>
-                `<span class="pressure-scale-tick" style="left: ${p.left}%; transform: ${p.transform}">${unitSystem === 'imperial' ? convertPressureHpa(p.hpa).toFixed(1) : p.hpa}</span>`
+                `<span class="pressure-scale-tick" style="left: ${p.left}%; transform: ${p.transform}">${unitSystem === 'imperial' ? Math.round(convertPressureHpa(p.hpa)) : p.hpa}</span>`
             )
             .join('')}
         </div>
@@ -1077,7 +1090,7 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
 function buildDaily(daily) {
   let html = `
     <div class="daily-row daily-header">
-      <div class="day">${formatDDMMYYYY(daily.time[0])}</div>
+      <div class="day">Date</div>
       <div class="icon">Weather</div>
       <div class="prob prob-header"><span class="prob-icon">🌧️</span>/<span class="prob-icon">🌨️</span></div>
       <div class="temps">Hi / Lo</div>
@@ -1086,10 +1099,9 @@ function buildDaily(daily) {
 
   for (let i = 0; i < daily.time.length; i++) {
     const date = new Date(daily.time[i]);
-    const label =
-      i === 0
-        ? 'Today'
-        : `${date.toLocaleDateString([], { weekday: 'short' })} <span class="day-date">${formatDDMM(daily.time[i])}</span>`;
+    const label = `<span class="day-weekday">${
+      i === 0 ? 'Today' : date.toLocaleDateString([], { weekday: 'short' })
+    }</span><span class="day-date">${i === 0 ? formatDDMMYYYY(daily.time[i]) : formatDDMM(daily.time[i])}</span>`;
     const icon = getWeatherIcon(daily.weather_code[i], true);
     const condition = weatherDescriptions[daily.weather_code[i]] || '';
     const prob = daily.precipitation_probability_max[i];
@@ -1191,6 +1203,14 @@ function formatDDMMYYYY(iso) {
 
 function formatDDMMDot(date) {
   return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.`;
+}
+
+function formatWeekdayDateTime(iso) {
+  const d = new Date(iso);
+  const weekday = d.toLocaleDateString([], { weekday: 'short' });
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${weekday}, ${day}.${month}.${d.getFullYear()}, ${formatTime(iso)}`;
 }
 
 function getUvLabel(uv) {

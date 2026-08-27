@@ -549,6 +549,13 @@ button:hover {
   text-align: center;
 }
 
+.current-clock {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: #6b4e34;
+}
+
 /* Breaks out of .card's own 32px padding (negative side margins) so the 1fr spacer tracks
    below are measured against the card's true edge-to-edge width — otherwise the outer two
    spacers would sit on top of that existing padding while the center one wouldn't, making the
@@ -1577,10 +1584,17 @@ button:hover {
   text-align: center;
 }
 
+.day-weekday {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+
 .day-date {
-  display: inline;
-  margin-left: 2px;
-  font-size: 0.7rem;
+  display: block;
+  margin-left: 0;
+  line-height: 1.1;
+  font-size: 0.65rem;
   font-weight: normal;
   color: #9c8267;
 }
