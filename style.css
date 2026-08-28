@@ -1,3 +1,118 @@
+/* ==========================================================================
+   Theme tokens
+
+   Every colour, shadow, filter, font and animation in this file resolves
+   through one of these. Nothing below this block contains a raw colour
+   literal -- if you find yourself typing a hex value further down, it wants
+   to be a token instead, defined in every theme block.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Typography */
+  --font-display: Arial, Helvetica, sans-serif;
+  --font-body: Arial, Helvetica, sans-serif;
+  --display-tracking: normal;
+  --temp-size: 3.5rem;
+
+  /* Backdrop -- the page behind the panels */
+  --bg-base: transparent;
+  --bg-gradient: linear-gradient(135deg, #d9a066, #b3714a);
+  --bg-attachment: scroll;
+  --backdrop-display: none;
+  --grid-line: transparent;
+  --grid-line-alt: transparent;
+  --grid-anim: none;
+  --sun-top: transparent;
+  --sun-mid: transparent;
+  --sun-bottom: transparent;
+  --sun-halo: transparent;
+
+  /* Scanlines */
+  --scanline-color: transparent;
+  --scanline-anim: none;
+
+  /* Surfaces, borders, shadows */
+  --surface-card: #fdf3e7;
+  --card-backdrop-filter: none;
+  --surface-raised: #fffaf3;
+  --surface-sunken: rgba(179, 113, 74, 0.12);
+  --surface-hover: #f5e8d8;
+  --surface-hover-accent: rgba(179, 113, 74, 0.15);
+  --surface-accent-wash: rgba(179, 113, 74, 0.18);
+  --border-subtle: #d9c3ac;
+  --border-hairline: rgba(179, 113, 74, 0.15);
+  --shadow-card: 0 10px 25px rgba(60, 30, 10, 0.2);
+  --shadow-dropdown: 0 10px 25px rgba(60, 30, 10, 0.15);
+
+  /* Text tiers */
+  --text-primary: #4a3320;
+  --text-secondary: #6b4e34;
+  --text-muted: #9c8267;
+  --text-body: #5c4630;
+  --text-on-accent: #fffaf3;
+  --text-on-accent-strong: #fdf3e7;
+
+  /* Accent */
+  --accent: #b3714a;
+  --accent-hover: #9c5f3d;
+  --accent-focus: #b3714a;
+  --temp-accent: #9c5f3d;
+
+  /* Glow and motion */
+  --glow-heading: none;
+  --glow-accent: none;
+  --glow-temp: none;
+  --glow-value: none;
+  --temp-anim: none;
+
+  /* Ordered data scale -- shared by the UV, AQI, humidity, wind and pressure
+     bars. Must always read as an ordered progression, cool -> extreme. */
+  --scale-cool: #03a9f4;
+  --scale-good: #4caf50;
+  --scale-moderate: #ffeb3b;
+  --scale-elevated: #ff9800;
+  --scale-high: #f44336;
+  --scale-severe: #9c27b0;
+  --scale-extreme: #7b241c;
+
+  /* Domain colours -- precipitation, and the sun / moon arcs */
+  --precip: #4a90d9;
+  --snow-fill: #9fb3c8;
+  --snow-text: #6b7f91;
+  --sun-track: #d9a066;
+  --sun-marker: #f2a93b;
+  --sun-glow: rgba(242, 169, 59, 0.25);
+  --moon-track: #7c8ba1;
+  --moon-marker: #9aa8bd;
+  --moon-glow: rgba(124, 139, 161, 0.25);
+  --arc-baseline: rgba(107, 78, 52, 0.3);
+  --arc-remaining: rgba(107, 78, 52, 0.35);
+  --arc-marker-stroke: #fdf3e7;
+  --arc-filter: none;
+  --icon-filter: none;
+
+  /* Trend indicators (also referenced from script.js) */
+  --daylength-longer: #6f9c5f;
+  --daylength-shorter: #b3574a;
+
+  /* Radar panel chrome. The base map tiles are externally sourced imagery, so
+     they are re-toned with a filter rather than a colour. */
+  --radar-map-bg: #cfd8dc;
+  --radar-base-filter: none;
+  --radar-marker: #ff5722;
+  --radar-marker-ring: white;
+  --radar-marker-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  --radar-btn-bg: #ffffff;
+  --radar-btn-fg: #333;
+  --radar-btn-bg-hover: #f2f2f2;
+  --radar-btn-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+
+  /* Misc */
+  --scrollbar-color: auto;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10,8 +125,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 24px;
-  font-family: Arial, Helvetica, sans-serif;
-  background: linear-gradient(135deg, #d9a066, #b3714a);
+  font-family: var(--font-body);
+  background: var(--bg-gradient);
+  background-color: var(--bg-base);
+  background-attachment: var(--bg-attachment);
   padding: 24px 0;
 }
 
@@ -25,29 +142,29 @@ body {
 }
 
 .card {
-  background: #fdf3e7;
+  background: var(--surface-card);
   border-radius: 12px;
   padding: 32px;
   width: 100%;
   max-width: 440px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+  box-shadow: var(--shadow-card);
 }
 
 .radar-panel {
-  background: #fdf3e7;
+  background: var(--surface-card);
   border-radius: 12px;
   padding: 24px;
   width: 100%;
   max-width: 600px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+  box-shadow: var(--shadow-card);
 }
 
 .radar-panel h3 {
   margin: 0 0 12px;
   font-size: 0.95rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .radar-timeline {
@@ -59,13 +176,13 @@ body {
   text-align: center;
   font-size: 0.85rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 #radar-time-slider {
   width: 100%;
-  accent-color: #b3714a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -78,7 +195,7 @@ body {
   display: flex;
   justify-content: space-between;
   font-size: 0.7rem;
-  color: #9c8267;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -91,7 +208,7 @@ body {
   margin: 0 auto;
   overflow: hidden;
   border-radius: 12px;
-  background: #cfd8dc;
+  background: var(--radar-map-bg);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -117,11 +234,11 @@ body {
   position: absolute;
   width: 14px;
   height: 14px;
-  background: #ff5722;
-  border: 2px solid white;
+  background: var(--radar-marker);
+  border: 2px solid var(--radar-marker-ring);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--radar-marker-shadow);
   pointer-events: none;
   z-index: 10;
 }
@@ -142,16 +259,16 @@ body {
   padding: 0;
   border: none;
   border-radius: 4px;
-  background: #ffffff;
-  color: #333;
+  background: var(--radar-btn-bg);
+  color: var(--radar-btn-fg);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--radar-btn-shadow);
 }
 
 .radar-zoom-controls button:hover {
-  background: #f2f2f2;
+  background: var(--radar-btn-bg-hover);
 }
 
 .radar-placeholder {
@@ -160,7 +277,7 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 80%;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 0;
@@ -169,14 +286,14 @@ body {
 
 .radar-caption {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   text-align: center;
   margin: 10px 0 0;
 }
 
 .radar-attribution {
   font-size: 0.7rem;
-  color: #9c8267;
+  color: var(--text-muted);
   text-align: center;
   margin: 4px 0 0;
 }
@@ -197,7 +314,7 @@ body {
 }
 
 .pollen-panel {
-  background: #fdf3e7;
+  background: var(--surface-card);
   border-radius: 12px;
   padding: 24px 32px;
   width: 100%;
@@ -205,17 +322,17 @@ body {
      both sit flush against the same left-aligned starting point (see .pollen-outer above). */
   max-width: 440px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+  box-shadow: var(--shadow-card);
 }
 
 .pollen-panel h3 {
   margin: 0 0 16px;
   font-size: 0.95rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pollen-placeholder {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin: 8px 0;
 }
@@ -237,7 +354,7 @@ body {
 .pollen-value {
   font-size: 0.85rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-top: 8px;
 }
 
@@ -255,7 +372,7 @@ body {
   position: relative;
   width: 14px;
   height: 90px;
-  background: rgba(179, 113, 74, 0.12);
+  background: var(--surface-sunken);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -272,13 +389,13 @@ body {
   left: -3px;
   width: 20px;
   height: 2px;
-  background: #6b4e34;
+  background: var(--text-secondary);
 }
 
 .pollen-scale-peak {
   font-size: 0.5rem;
   font-weight: bold;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin-bottom: 2px;
 }
 
@@ -290,7 +407,7 @@ body {
   transform: translateY(50%);
   font-size: 0.5rem;
   font-weight: bold;
-  color: #6b4e34;
+  color: var(--text-secondary);
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
@@ -302,45 +419,45 @@ body {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pollen-active-window {
   margin-top: 8px;
   font-size: 0.55rem;
   line-height: 1.05;
-  color: #9c8267;
+  color: var(--text-muted);
 }
 
 .pollen-name {
   margin-top: 2px;
   font-size: 0.68rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .pollen-name-local {
   font-size: 0.55rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
 .pollen-summary {
   font-size: 0.85rem;
-  color: #4a3320;
+  color: var(--text-primary);
   margin: 8px 0 4px;
 }
 
 .pollen-note {
   font-size: 0.7rem;
-  color: #9c8267;
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
 h1 {
   margin-top: 0;
   font-size: 1.5rem;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .card-header {
@@ -361,23 +478,23 @@ h1 {
 
 .unit-toggle-btn {
   padding: 4px 10px;
-  border: 1px solid #d9c3ac;
+  border: 1px solid var(--border-subtle);
   border-radius: 20px;
-  background: #fffaf3;
-  color: #6b4e34;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: bold;
   cursor: pointer;
 }
 
 .unit-toggle-btn:hover {
-  background: #f5e8d8;
+  background: var(--surface-hover);
 }
 
 .unit-toggle-btn.active {
-  background: #b3714a;
-  border-color: #b3714a;
-  color: #fffaf3;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
 }
 
 #search-form {
@@ -394,16 +511,16 @@ h1 {
 #city-input {
   width: 100%;
   padding: 10px 34px 10px 12px;
-  border: 1px solid #d9c3ac;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   font-size: 1rem;
-  background: #fffaf3;
-  color: #4a3320;
+  background: var(--surface-raised);
+  color: var(--text-primary);
 }
 
 #city-input:focus {
   outline: none;
-  border-color: #b3714a;
+  border-color: var(--accent-focus);
 }
 
 .clear-input-btn {
@@ -418,7 +535,7 @@ h1 {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #9c8267;
+  color: var(--text-muted);
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
@@ -427,8 +544,8 @@ h1 {
 }
 
 .clear-input-btn:hover {
-  background: rgba(179, 113, 74, 0.15);
-  color: #6b4e34;
+  background: var(--surface-hover-accent);
+  color: var(--text-secondary);
 }
 
 .suggestions {
@@ -441,10 +558,10 @@ h1 {
   margin: 0;
   padding: 6px;
   list-style: none;
-  background: #fffaf3;
-  border: 1px solid #d9c3ac;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.15);
+  box-shadow: var(--shadow-dropdown);
   max-height: 280px;
   overflow-y: auto;
 }
@@ -457,7 +574,7 @@ h1 {
   padding: 8px 10px;
   border-radius: 8px;
   cursor: pointer;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .suggestion-item + .suggestion-item {
@@ -466,13 +583,13 @@ h1 {
 
 .suggestion-item:hover,
 .suggestion-item.highlighted {
-  background: #b3714a;
-  color: #fffaf3;
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
 
 .suggestion-item:hover .suggestion-subtitle,
 .suggestion-item.highlighted .suggestion-subtitle {
-  color: #fffaf3;
+  color: var(--text-on-accent);
 }
 
 .suggestion-name {
@@ -483,12 +600,12 @@ h1 {
 .suggestion-subtitle {
   display: block;
   font-size: 0.8rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .suggestion-empty {
   padding: 8px 10px;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -496,18 +613,18 @@ button {
   padding: 10px 16px;
   border: none;
   border-radius: 8px;
-  background: #b3714a;
-  color: #fdf3e7;
+  background: var(--accent);
+  color: var(--text-on-accent-strong);
   font-size: 1rem;
   cursor: pointer;
 }
 
 button:hover {
-  background: #9c5f3d;
+  background: var(--accent-hover);
 }
 
 #result {
-  color: #5c4630;
+  color: var(--text-body);
   min-height: 40px;
 }
 
@@ -518,12 +635,12 @@ button:hover {
 #result h2 {
   margin: 4px 0;
   font-size: 1.1rem;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 #result h3 {
   font-size: 0.95rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin: 20px 0 8px;
 }
 
@@ -540,7 +657,7 @@ button:hover {
 .local-time {
   font-size: 0.85rem;
   font-weight: bold;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 /* Current conditions */
@@ -553,7 +670,7 @@ button:hover {
   margin: 0;
   font-size: 0.75rem;
   font-weight: normal;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 /* Breaks out of .card's own 32px padding (negative side margins) so the 1fr spacer tracks
@@ -586,25 +703,25 @@ button:hover {
 
 .condition {
   margin: 4px 0;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .current-precip {
   margin: 2px 0 0;
-  color: #4a90d9;
+  color: var(--precip);
 }
 
 .temp-big {
   font-size: 3.5rem;
   font-weight: bold;
   margin: 4px 0;
-  color: #9c5f3d;
+  color: var(--temp-accent);
 }
 
 .feels-like,
 .hi-lo {
   margin: 2px 0;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -624,7 +741,7 @@ button:hover {
 }
 
 .hour-label {
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .hour-icon {
@@ -633,7 +750,7 @@ button:hover {
 }
 
 .hour-precip {
-  color: #4a90d9;
+  color: var(--precip);
   min-height: 1em;
   position: relative;
   left: 2px;
@@ -641,7 +758,7 @@ button:hover {
 
 .hour-temp {
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 /* Widened by the full 16px .hourly-scroll gap and shifted left by half of that via margin-left,
@@ -658,8 +775,8 @@ button:hover {
   width: calc(100% + 16px);
   height: 42px;
   margin: 2px 0 0 -8px;
-  border: 1px solid #d9c3ac;
-  background: #fffaf3;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
   overflow: hidden;
 }
 
@@ -687,7 +804,7 @@ button:hover {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: #4a90d9;
+  background: var(--precip);
 }
 
 /* Anchored to the fill's own top edge (not a fixed position in the box), so the label rides up
@@ -700,7 +817,7 @@ button:hover {
   right: 0;
   margin-bottom: 1px;
   font-size: 0.5rem;
-  color: #4a90d9;
+  color: var(--precip);
   text-align: center;
   white-space: nowrap;
   pointer-events: none;
@@ -709,11 +826,11 @@ button:hover {
 /* Snow reuses the same box/bar/label structure as rain, just in a distinguishing color so the
    two substances don't read as the same thing when scrolling through mixed-precipitation hours. */
 .hour-rain-box-snow .hour-rain-fill {
-  background: #9fb3c8;
+  background: var(--snow-fill);
 }
 
 .hour-rain-box-snow .hour-rain-value {
-  color: #6b7f91;
+  color: var(--snow-text);
 }
 
 /* Details grid */
@@ -725,7 +842,7 @@ button:hover {
 }
 
 .detail-card {
-  background: rgba(179, 113, 74, 0.12);
+  background: var(--surface-sunken);
   border-radius: 12px;
   padding: 12px;
 }
@@ -736,7 +853,7 @@ button:hover {
 
 .detail-card .label {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -751,19 +868,19 @@ button:hover {
 .detail-card .value {
   font-size: 1.3rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-top: 6px;
 }
 
 .value-secondary {
   font-size: 0.8rem;
   font-weight: normal;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .detail-card .sub {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -780,27 +897,27 @@ button:hover {
 }
 
 .uv-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 2;
 }
 
 .uv-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 3;
 }
 
 .uv-segment-orange {
-  background: #ff9800;
+  background: var(--scale-elevated);
   flex: 2;
 }
 
 .uv-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 3;
 }
 
 .uv-segment-violet {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 2;
 }
 
@@ -817,7 +934,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .uv-marker-value {
@@ -827,7 +944,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -844,32 +961,32 @@ button:hover {
 }
 
 .aqi-segment-blue {
-  background: #03a9f4;
+  background: var(--scale-cool);
   flex: 1;
 }
 
 .aqi-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 1;
 }
 
 .aqi-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 1;
 }
 
 .aqi-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 1;
 }
 
 .aqi-segment-purple {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 1;
 }
 
 .aqi-segment-maroon {
-  background: #7b241c;
+  background: var(--scale-extreme);
   flex: 1;
 }
 
@@ -886,7 +1003,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .aqi-marker-value {
@@ -896,7 +1013,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -913,27 +1030,27 @@ button:hover {
 }
 
 .humidity-segment-blue {
-  background: #03a9f4;
+  background: var(--scale-cool);
   flex: 6;
 }
 
 .humidity-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 4;
 }
 
 .humidity-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 3;
 }
 
 .humidity-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 3;
 }
 
 .humidity-segment-purple {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 4;
 }
 
@@ -950,7 +1067,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .humidity-marker-value {
@@ -960,7 +1077,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -977,32 +1094,32 @@ button:hover {
 }
 
 .wind-segment-blue {
-  background: #03a9f4;
+  background: var(--scale-cool);
   flex: 12;
 }
 
 .wind-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 17;
 }
 
 .wind-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 21;
 }
 
 .wind-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 25;
 }
 
 .wind-segment-purple {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 28;
 }
 
 .wind-segment-maroon {
-  background: #7b241c;
+  background: var(--scale-extreme);
   flex: 27;
 }
 
@@ -1019,7 +1136,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .wind-marker-value {
@@ -1029,14 +1146,14 @@ button:hover {
   white-space: nowrap;
   font-size: 0.68rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
 .wind-marker-value-secondary {
   font-size: 0.6rem;
   font-weight: normal;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pressure-bar-wrap {
@@ -1052,17 +1169,17 @@ button:hover {
 }
 
 .pressure-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 30;
 }
 
 .pressure-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 40;
 }
 
 .pressure-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 30;
 }
 
@@ -1079,7 +1196,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .pressure-marker-value {
@@ -1089,7 +1206,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -1110,12 +1227,12 @@ button:hover {
 
 .pressure-legend-main {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pressure-legend-sub {
   font-size: 0.65rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pressure-scale {
@@ -1128,7 +1245,7 @@ button:hover {
   position: absolute;
   top: 0;
   font-size: 0.6rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1161,69 +1278,69 @@ button:hover {
 }
 
 .sun-arc text {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
 }
 
 .sun-arc-baseline {
-  stroke: rgba(107, 78, 52, 0.3);
+  stroke: var(--arc-baseline);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
 }
 
 .sun-arc-elapsed {
   fill: none;
-  stroke: #d9a066;
+  stroke: var(--sun-track);
   stroke-width: 3;
   stroke-linecap: round;
 }
 
 .sun-arc-remaining {
   fill: none;
-  stroke: rgba(107, 78, 52, 0.35);
+  stroke: var(--arc-remaining);
   stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 4 5;
 }
 
 .sun-arc-tick {
-  stroke: #6b4e34;
+  stroke: var(--text-secondary);
   stroke-width: 1.5;
 }
 
 .sun-arc-glow {
-  fill: rgba(242, 169, 59, 0.25);
+  fill: var(--sun-glow);
 }
 
 .sun-arc-marker {
-  fill: #f2a93b;
-  stroke: #fdf3e7;
+  fill: var(--sun-marker);
+  stroke: var(--arc-marker-stroke);
   stroke-width: 2;
 }
 
 .sun-arc-side-label {
   font-size: 11px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .sun-arc-side-value {
   font-size: 20px;
   font-weight: bold;
-  fill: #4a3320;
+  fill: var(--text-primary);
 }
 
 .sun-arc-side-direction {
   font-size: 9px;
-  fill: #9c8267;
+  fill: var(--text-muted);
 }
 
 .sun-arc-horizon-label {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .sun-arc-horizon-compass {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .sun-arc-caption {
@@ -1232,14 +1349,14 @@ button:hover {
 
 .sun-arc-caption-label {
   font-size: 0.85rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .sun-arc-caption-value {
   display: block;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .sun-arc-caption-value-wrap {
@@ -1267,7 +1384,7 @@ button:hover {
 }
 
 .sun-arc-unavailable {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
@@ -1292,7 +1409,7 @@ button:hover {
   padding: 0 2px;
   font-size: 0.65rem;
   line-height: 1.2;
-  color: #6b4e34;
+  color: var(--text-secondary);
   text-align: center;
   white-space: nowrap;
 }
@@ -1314,7 +1431,7 @@ button:hover {
 .golden-hour-row {
   font-size: 0.65rem;
   line-height: 1.2;
-  color: #4a3320;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -1334,69 +1451,69 @@ button:hover {
 }
 
 .moon-arc text {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
 }
 
 .moon-arc-baseline {
-  stroke: rgba(107, 78, 52, 0.3);
+  stroke: var(--arc-baseline);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
 }
 
 .moon-arc-elapsed {
   fill: none;
-  stroke: #7c8ba1;
+  stroke: var(--moon-track);
   stroke-width: 3;
   stroke-linecap: round;
 }
 
 .moon-arc-remaining {
   fill: none;
-  stroke: rgba(107, 78, 52, 0.35);
+  stroke: var(--arc-remaining);
   stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 4 5;
 }
 
 .moon-arc-tick {
-  stroke: #6b4e34;
+  stroke: var(--text-secondary);
   stroke-width: 1.5;
 }
 
 .moon-arc-glow {
-  fill: rgba(124, 139, 161, 0.25);
+  fill: var(--moon-glow);
 }
 
 .moon-arc-marker {
-  fill: #9aa8bd;
-  stroke: #fdf3e7;
+  fill: var(--moon-marker);
+  stroke: var(--arc-marker-stroke);
   stroke-width: 2;
 }
 
 .moon-arc-side-label {
   font-size: 11px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .moon-arc-side-value {
   font-size: 20px;
   font-weight: bold;
-  fill: #4a3320;
+  fill: var(--text-primary);
 }
 
 .moon-arc-side-direction {
   font-size: 9px;
-  fill: #9c8267;
+  fill: var(--text-muted);
 }
 
 .moon-arc-horizon-label {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .moon-arc-horizon-compass {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .moon-arc-caption {
@@ -1405,25 +1522,25 @@ button:hover {
 
 .moon-arc-caption-label {
   font-size: 0.85rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .moon-arc-caption-value {
   display: block;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .moon-phase-value {
   display: block;
   font-size: 0.8rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .moon-arc-unavailable {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
@@ -1432,7 +1549,7 @@ button:hover {
 /* Moon phase section — independent from the Moonrise & moonset card above, own namespace */
 
 .moon-phase-section-unavailable {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
@@ -1443,7 +1560,7 @@ button:hover {
   display: flex;
   justify-content: space-between;
   font-size: 0.6rem;
-  color: #9c8267;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -1471,14 +1588,14 @@ button:hover {
 }
 
 .moon-phase-icon-current {
-  background: rgba(179, 113, 74, 0.18);
+  background: var(--surface-accent-wash);
   transform: scale(1.15);
 }
 
 .moon-phase-indicator {
   position: absolute;
   top: 0;
-  color: #b3714a;
+  color: var(--accent);
   font-size: 0.8rem;
   line-height: 1;
   white-space: nowrap;
@@ -1510,14 +1627,14 @@ button:hover {
   flex: 1;
   text-align: center;
   font-size: 0.6rem;
-  color: #9c8267;
+  color: var(--text-muted);
 }
 
 .moon-phase-label {
   text-align: center;
   font-size: 0.95rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
@@ -1525,7 +1642,7 @@ button:hover {
   text-align: center;
   font-size: 0.75rem;
   font-style: italic;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
@@ -1541,7 +1658,7 @@ button:hover {
   align-items: center;
   justify-content: space-between;
   padding: 8px 4px;
-  border-bottom: 1px solid rgba(179, 113, 74, 0.15);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
 .daily-row:last-child {
@@ -1551,7 +1668,7 @@ button:hover {
 .daily-row .day {
   width: 80px;
   font-size: 0.9rem;
-  color: #4a3320;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -1565,7 +1682,7 @@ button:hover {
 .daily-condition {
   font-size: 0.55rem;
   line-height: 1;
-  color: #9c8267;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1578,14 +1695,14 @@ button:hover {
   margin-left: 18px;
   text-align: center;
   font-size: 0.8rem;
-  color: #4a90d9;
+  color: var(--precip);
 }
 
 .daily-row .temps {
   width: 90px;
   text-align: right;
   font-size: 0.9rem;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .daily-header .day,
@@ -1593,12 +1710,12 @@ button:hover {
 .daily-header .temps {
   font-size: 0.7rem;
   font-weight: normal;
-  color: #9c8267;
+  color: var(--text-muted);
 }
 
 .daily-header .prob {
   font-size: 1.1rem;
-  color: #9c8267;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -1625,5 +1742,5 @@ button:hover {
   line-height: 1.1;
   font-size: 0.65rem;
   font-weight: normal;
-  color: #9c8267;
+  color: var(--text-muted);
 }
