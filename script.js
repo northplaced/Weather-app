@@ -613,6 +613,49 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
   `;
 }
 
+// Simplified solar position (azimuth/elevation), mirroring getMoonAzimuthElevation below —
+// same low-precision approach (a couple of periodic correction terms for the ecliptic
+// longitude, the sun's ecliptic latitude is ~0 so no correction needed there), same final
+// RA/Dec -> sidereal time -> hour angle -> horizontal-coordinate steps. Accurate to well under
+// a tenth of a degree, more than enough for a compass/elevation reading.
+function getSunAzimuthElevation(date, latDeg, lonDeg) {
+  const RAD = Math.PI / 180;
+  const DEG = 180 / Math.PI;
+  const normalizeDeg = (deg) => ((deg % 360) + 360) % 360;
+
+  const julianDate = date.getTime() / 86400000 + 2440587.5;
+  const daysSinceJ2000 = julianDate - 2451545.0;
+
+  const meanLongitude = normalizeDeg(280.46 + 0.9856474 * daysSinceJ2000);
+  const meanAnomaly = normalizeDeg(357.528 + 0.9856003 * daysSinceJ2000);
+
+  const eclipticLon = normalizeDeg(
+    meanLongitude + 1.915 * Math.sin(meanAnomaly * RAD) + 0.02 * Math.sin(2 * meanAnomaly * RAD)
+  );
+
+  const obliquity = 23.4397 * RAD;
+  const lonRad = eclipticLon * RAD;
+
+  const rightAscension = Math.atan2(Math.cos(obliquity) * Math.sin(lonRad), Math.cos(lonRad));
+  const declination = Math.asin(Math.sin(obliquity) * Math.sin(lonRad));
+
+  const gmst = normalizeDeg(280.46061837 + 360.98564736629 * daysSinceJ2000);
+  const localSiderealTime = normalizeDeg(gmst + lonDeg);
+  const hourAngle = normalizeDeg(localSiderealTime - rightAscension * DEG) * RAD;
+
+  const observerLat = latDeg * RAD;
+  const elevation = Math.asin(
+    Math.sin(observerLat) * Math.sin(declination) + Math.cos(observerLat) * Math.cos(declination) * Math.cos(hourAngle)
+  );
+  const azimuthFromSouth = Math.atan2(
+    Math.sin(hourAngle),
+    Math.cos(hourAngle) * Math.sin(observerLat) - Math.tan(declination) * Math.cos(observerLat)
+  );
+  const azimuthDeg = normalizeDeg(azimuthFromSouth * DEG + 180);
+
+  return { azimuthDeg, elevationDeg: elevation * DEG };
+}
+
 // Draws a day arc between sunrise and sunset, with the sunrise/sunset times shown as large
 // labels flanking it, tick marks at its base, and a dashed horizon line running the full
 // width behind everything. The sun marker's (x,y) is computed with the same ellipse math
@@ -656,6 +699,15 @@ function buildSunPath(daily, currentTimeIso, latitude, longitude) {
   const sunriseLabel = formatTime(sunriseIso);
   const sunsetLabel = formatTime(sunsetIso);
 
+  const sunriseAzimuth = getSunAzimuthElevation(sunriseDate, latitude, longitude).azimuthDeg;
+  const sunsetAzimuth = getSunAzimuthElevation(sunsetDate, latitude, longitude).azimuthDeg;
+  const sunriseDirection = `${Math.round(sunriseAzimuth)}&deg; (${degToCompass(sunriseAzimuth)})`;
+  const sunsetDirection = `${Math.round(sunsetAzimuth)}&deg; (${degToCompass(sunsetAzimuth)})`;
+
+  const { azimuthDeg, elevationDeg } = getSunAzimuthElevation(now, latitude, longitude);
+  const horizonCompass = `🧭 ${Math.round(azimuthDeg)}&deg; (${degToCompass(azimuthDeg)})`;
+  const horizonElevation = `${Math.round(Math.abs(elevationDeg))}° ${elevationDeg >= 0 ? 'above' : 'below'} Horizon`;
+
   // Outside daylight hours, "remaining daylight" doesn't apply — show a countdown to the next
   // sunrise instead (today's if we're still before dawn, otherwise tomorrow's, which `daily`
   // already has since it covers the full 10-day forecast, not just today).
@@ -689,11 +741,14 @@ function buildSunPath(daily, currentTimeIso, latitude, longitude) {
       <line class="sun-arc-tick" x1="${dayRightX}" y1="${baselineY - 6}" x2="${dayRightX}" y2="${baselineY + 6}" />
       <circle class="sun-arc-glow" cx="${sunX}" cy="${sunY}" r="14" />
       <circle class="sun-arc-marker" cx="${sunX}" cy="${sunY}" r="7" />
-      <text class="sun-arc-side-label" x="${leftX}" y="${baselineY - 24}">Sunrise</text>
+      <text class="sun-arc-side-label" x="${leftX}" y="${baselineY - 37}">Sunrise</text>
+      <text class="sun-arc-side-direction" x="${leftX}" y="${baselineY - 26}">${sunriseDirection}</text>
       <text class="sun-arc-side-value" x="${leftX}" y="${baselineY - 6}">${sunriseLabel}</text>
-      <text class="sun-arc-side-label" x="${rightX}" y="${baselineY - 24}" text-anchor="end">Sunset</text>
+      <text class="sun-arc-side-label" x="${rightX}" y="${baselineY - 37}" text-anchor="end">Sunset</text>
+      <text class="sun-arc-side-direction" x="${rightX}" y="${baselineY - 26}" text-anchor="end">${sunsetDirection}</text>
       <text class="sun-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${sunsetLabel}</text>
-      <text class="sun-arc-horizon-label" x="${dayCx}" y="${baselineY - 4}" text-anchor="middle">Horizon</text>
+      <text class="sun-arc-horizon-compass" x="${dayCx}" y="${baselineY - 17}" text-anchor="middle">${horizonCompass}</text>
+      <text class="sun-arc-horizon-label" x="${dayCx}" y="${baselineY - 4}" text-anchor="middle">${horizonElevation}</text>
     </svg>
     ${buildGoldenBlueHour(sunriseDate, sunsetDate)}
     <div class="sun-arc-caption">
@@ -719,10 +774,7 @@ function buildGoldenBlueHour(sunriseDate, sunsetDate) {
         <div class="golden-hour-row">🔵 ${formatTime(morningBlueStart)}-${formatTime(sunriseDate)} 🌅</div>
         <div class="golden-hour-row">🟡 ${formatTime(sunriseDate)}-${formatTime(morningGoldenEnd)} ☀️</div>
       </div>
-      <div class="golden-hour-divider">
-        <div>📷 Golden</div>
-        <div>&amp; blue hours</div>
-      </div>
+      <div class="golden-hour-divider">← 📷 Golden &amp; blue hours →</div>
       <div class="golden-hour-col">
         <div class="golden-hour-row">🟡 ${formatTime(eveningGoldenStart)}-${formatTime(sunsetDate)} 🌇</div>
         <div class="golden-hour-row">🔵 ${formatTime(sunsetDate)}-${formatTime(eveningBlueEnd)} 🌙</div>
@@ -1144,7 +1196,7 @@ function buildMoonPath(daily, currentTimeIso, latitude, longitude) {
       <text class="moon-arc-side-label" x="${rightX}" y="${baselineY - 37}" text-anchor="end">Moonset</text>
       <text class="moon-arc-side-direction" x="${rightX}" y="${baselineY - 26}" text-anchor="end">${moonsetDirection}</text>
       <text class="moon-arc-side-value" x="${rightX}" y="${baselineY - 6}" text-anchor="end">${moonsetLabel}</text>
-      <text class="moon-arc-horizon-compass" x="${arcCx}" y="${baselineY - 14}" text-anchor="middle">${horizonCompass}</text>
+      <text class="moon-arc-horizon-compass" x="${arcCx}" y="${baselineY - 17}" text-anchor="middle">${horizonCompass}</text>
       <text class="moon-arc-horizon-label" x="${arcCx}" y="${baselineY - 4}" text-anchor="middle">${horizonElevation}</text>
     </svg>
   `;

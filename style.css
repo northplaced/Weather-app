@@ -1211,8 +1211,18 @@ button:hover {
   fill: #4a3320;
 }
 
-.sun-arc-horizon-label {
+.sun-arc-side-direction {
   font-size: 9px;
+  fill: #9c8267;
+}
+
+.sun-arc-horizon-label {
+  font-size: 9.75px;
+  fill: #6b4e34;
+}
+
+.sun-arc-horizon-compass {
+  font-size: 9.75px;
   fill: #6b4e34;
 }
 
@@ -1371,12 +1381,12 @@ button:hover {
 }
 
 .moon-arc-horizon-label {
-  font-size: 9px;
+  font-size: 9.75px;
   fill: #6b4e34;
 }
 
 .moon-arc-horizon-compass {
-  font-size: 9px;
+  font-size: 9.75px;
   fill: #6b4e34;
 }
 
