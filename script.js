@@ -2283,4 +2283,21 @@ playerLaunch.addEventListener('click', async () => {
   teardownPlayer();
 });
 
-setPlayerNote('');
+// Opened straight from disk there is no real origin and no Referer, and YouTube
+// refuses to start an embedded player at all — error 153, every time, for any
+// video. Nothing here can work around it, so say so up front rather than
+// offering a Play button that cannot possibly work.
+function initPlayerAvailability() {
+  if (window.location.protocol !== 'file:') {
+    setPlayerNote('');
+    return;
+  }
+
+  playerLaunch.disabled = true;
+  playerLaunch.querySelector('span:last-child').textContent = 'Unavailable';
+  setPlayerNote('YouTube will not run an embedded player on a page opened from disk (file://). '
+    + 'Serve this folder over http:// — for example "npx http-server . -p 5501" — then open '
+    + 'http://localhost:5501 and the music will play. Everything else on the page works either way.');
+}
+
+initPlayerAvailability();
