@@ -1289,11 +1289,6 @@ button:hover {
 }
 
 .golden-hour-divider {
-  /* Vertical bars intentionally hidden (color-matched to the card background) until the
-     spacing/sizing work is resumed — see TODO.md. Kept as real borders (not display:none) so
-     the layout footprint stays put and nothing shifts when they're switched back on. */
-  border-left: 1px solid #fdf3e7;
-  border-right: 1px solid #fdf3e7;
   padding: 0 2px;
   font-size: 0.65rem;
   line-height: 1.2;
