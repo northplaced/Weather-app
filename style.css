@@ -2071,10 +2071,9 @@ button:hover {
 /* ==========================================================================
    Synthwave radio
 
-   Mirrors the .pollen-outer / .pollen-panel pair so the deck lines up with the
-   card and pollen panels above it. The stage keeps a fixed minimum height in
-   both states, so swapping the Play button for the YouTube player doesn't
-   shift the page.
+   A slim deck across the top of the page. Laid out as a row -- player on the
+   left, title and transport on the right -- so the panel is about as tall as
+   the video window itself rather than stacking controls underneath it.
    ========================================================================== */
 
 .player-outer {
@@ -2084,48 +2083,58 @@ button:hover {
 }
 
 .player-panel {
-  background: var(--surface-card);
-  border-radius: 12px;
-  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
   width: 100%;
-  max-width: 440px;
-  text-align: center;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--surface-card);
+  text-align: left;
   box-shadow: var(--shadow-card);
   backdrop-filter: var(--card-backdrop-filter);
   -webkit-backdrop-filter: var(--card-backdrop-filter);
-}
-
-.player-panel h3 {
-  margin: 0 0 16px;
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  font-family: var(--font-display);
-  letter-spacing: var(--display-tracking);
-  text-shadow: var(--glow-heading);
 }
 
 .player-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 220px, not the 200px the IFrame API requires as a minimum: the extra 20
-     leaves room for YouTube's own control bar without it overlapping the art. */
-  min-height: 220px;
+  flex: none;
+  /* The IFrame API documents 200x200 as the smallest the player can be and
+     still render its own controls, and the fullscreen button lives in those
+     controls -- so this is as small as the window goes. */
+  width: 356px;
+  max-width: 100%;
+  height: 200px;
   border-radius: 10px;
   background: var(--surface-sunken);
 }
 
-/* YT.Player swaps in an iframe with its own width/height attributes, so these
-   have to win. Both dimensions stay at or above the 200px floor the IFrame API
-   documents, at every viewport width the panel can reach. */
+/* YT.Player swaps in an iframe carrying its own width/height attributes, so
+   these have to win. */
 .player-stage iframe {
   width: 100%;
-  max-width: 356px;
+  height: 100%;
   min-width: 200px;
-  height: 220px;
+  min-height: 200px;
   border: 0;
   border-radius: 10px;
   display: block;
+}
+
+.player-side {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-panel h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .player-launch {
@@ -2159,7 +2168,7 @@ button:hover {
 }
 
 .player-meta {
-  margin: 12px 0 0;
+  margin: 0;
   font-size: 0.85rem;
   color: var(--text-primary);
 }
@@ -2179,10 +2188,9 @@ button:hover {
 .player-controls {
   display: flex;
   align-items: center;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 8px 12px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .player-btn {
@@ -2220,19 +2228,32 @@ button:hover {
 }
 
 .player-note {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
 .player-attribution {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   font-size: 0.65rem;
   color: var(--text-muted);
 }
 
 .player-attribution a {
   color: inherit;
+}
+
+/* Below this the row cannot hold a 356px player and readable text side by
+   side, so the deck stacks and centres instead. */
+@media (max-width: 700px) {
+  .player-panel {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .player-controls {
+    justify-content: center;
+  }
 }
 
 /* ==========================================================================

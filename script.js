@@ -2048,6 +2048,21 @@ searchCity('Tampere');
 const YT_VIDEO_ID = 'Z4F6HFn6IZU';
 const VOLUME_STORAGE_KEY = 'weatherapp-volume';
 
+// The origin player parameter is only meaningful for a real web origin. Opened
+// straight from disk the page's origin is the string "null", which YouTube
+// rejects — one of the ways to end up staring at "Error 153".
+const isWebOrigin = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+
+const YT_ERROR_MESSAGES = {
+  2: 'That video ID is not valid.',
+  5: 'The video player hit a problem in this browser.',
+  100: 'That video is unavailable — it may have been removed or made private.',
+  101: 'The rights holder does not allow this track to play inside other sites.',
+  150: 'The rights holder does not allow this track to play inside other sites.',
+  153: 'YouTube would not start the embedded player. This usually means the page '
+    + 'was opened straight from disk — serve the folder over http:// instead and it will play.',
+};
+
 const playerStage = document.getElementById('player-stage');
 const playerLaunch = document.getElementById('player-launch');
 const playerControls = document.getElementById('player-controls');
@@ -2155,8 +2170,12 @@ playerLaunch.addEventListener('click', async () => {
       autoplay: 1,
       playsinline: 1,
       rel: 0,
-      modestbranding: 1,
-      origin: window.location.origin,
+      // The native toolbar stays switched on deliberately: it carries the
+      // fullscreen button, which is the only way to actually watch the video
+      // rather than just listen to it.
+      controls: 1,
+      fs: 1,
+      ...(isWebOrigin ? { origin: window.location.origin } : {}),
     },
     events: {
       onReady: (event) => {
@@ -2178,8 +2197,9 @@ playerLaunch.addEventListener('click', async () => {
         const playing = event.data === states.PLAYING;
         playerToggle.innerHTML = playing ? '&#10074;&#10074; Pause' : '&#9654; Play';
       },
-      onError: () => {
-        setPlayerNote('This track cannot be embedded here. Use the link below.');
+      onError: (event) => {
+        setPlayerNote(YT_ERROR_MESSAGES[event.data]
+          || `The player reported error ${event.data}. Use the track link below.`);
         teardownPlayer();
       },
     },
