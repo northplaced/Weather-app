@@ -4,7 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weather App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
+  <!-- Applies the saved theme before first paint. script.js runs at the end of
+       <body>, which is too late: the page would paint in the default theme and
+       then visibly snap to the saved one. localStorage access throws outright
+       in some privacy modes, hence the try/catch. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('weatherapp-theme');
+        if (t === 'classic' || t === 'synthwave') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (e) { /* storage unavailable; fall through to the default theme */ }
+    })();
+  </script>
 </head>
 <body>
 
@@ -16,6 +33,8 @@
           <button type="button" class="unit-toggle-btn" data-unit="si">&deg;C</button>
           <button type="button" class="unit-toggle-btn" data-unit="imperial">&deg;F</button>
         </div>
+        <button type="button" class="theme-toggle-btn" aria-pressed="true"
+                aria-label="Toggle theme" title="Switch to classic theme">🌇</button>
       </div>
 
       <form id="search-form" autocomplete="off">

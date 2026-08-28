@@ -16,6 +16,13 @@ const DEBOUNCE_DELAY = 350;
 const UNITS_STORAGE_KEY = 'weatherapp-units';
 let unitSystem = localStorage.getItem(UNITS_STORAGE_KEY) === 'imperial' ? 'imperial' : 'si';
 
+// Theme is applied to <html> as a data-theme attribute; style.css defines a complete token set
+// per theme. Synthwave is the default and needs no attribute, so only 'classic' has to persist.
+// index.html reads this same key in an inline <head> script to set the attribute before first
+// paint — without that, the page paints in the default theme and then snaps to the saved one.
+const THEME_STORAGE_KEY = 'weatherapp-theme';
+let theme = localStorage.getItem(THEME_STORAGE_KEY) === 'classic' ? 'classic' : 'synthwave';
+
 // Cached inputs from the last successful render, so toggling units can re-render from the
 // already-fetched data instead of re-fetching from the API.
 let lastLocation = null;
@@ -99,6 +106,28 @@ document.querySelectorAll('.unit-toggle-btn').forEach((btn) => {
     localStorage.setItem(UNITS_STORAGE_KEY, unitSystem);
     applyUnitToggleUI();
     if (lastForecast) renderWeather(lastLocation, lastForecast, lastAirQuality);
+  });
+});
+
+function applyThemeToggleUI() {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.querySelector('.theme-toggle-btn');
+  if (!btn) return;
+  const isSynthwave = theme === 'synthwave';
+  btn.setAttribute('aria-pressed', String(isSynthwave));
+  btn.title = isSynthwave ? 'Switch to classic theme' : 'Switch to synthwave theme';
+  btn.textContent = isSynthwave ? '🌇' : '🌤️';
+}
+
+// Deliberately does NOT re-render, unlike the unit toggle above. Units change the data; the
+// theme only changes paint, and every colour — including the ones set inline below as var()
+// references — re-resolves the moment the attribute flips. Re-rendering would throw away the
+// hourly strip's scroll position and replace the live clock's node for no reason.
+document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    theme = theme === 'synthwave' ? 'classic' : 'synthwave';
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    applyThemeToggleUI();
   });
 });
 
@@ -490,16 +519,16 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
   const pressureTrendChange =
     pressureTrendHours > 0 ? current.surface_pressure - hourly.surface_pressure[nowIndex - pressureTrendHours] : null;
   let pressureTrendLabel = 'Trend unavailable yet';
-  let pressureTrendColor = '#6b4e34';
+  let pressureTrendColor = 'var(--text-secondary)';
   if (pressureTrendChange != null) {
     const sign = pressureTrendChange > 0 ? '+' : '';
     const detail = `<span class="pressure-trend-detail">(${sign}${pressureTrendChange.toFixed(1)} hPa/${pressureTrendHours}h)</span>`;
     if (pressureTrendChange > 1) {
       pressureTrendLabel = `↑ Rising ${detail}`;
-      pressureTrendColor = '#4caf50';
+      pressureTrendColor = 'var(--scale-good)';
     } else if (pressureTrendChange < -1) {
       pressureTrendLabel = `↓ Falling ${detail}`;
-      pressureTrendColor = '#f44336';
+      pressureTrendColor = 'var(--scale-high)';
     } else {
       pressureTrendLabel = `→ Steady ${detail}`;
     }
@@ -829,16 +858,16 @@ function applyDayLengthTrend(el, diffSeconds) {
   if (absSeconds < 10) {
     arrow = '→';
     word = 'Steady';
-    color = '#6b4e34';
+    color = 'var(--text-secondary)';
   } else if (diffSeconds > 0) {
     arrow = '↑';
     word = 'Longer';
-    color = '#6f9c5f';
+    color = 'var(--daylength-longer)';
     bracket = ` (+${minutes}m ${seconds}s)`;
   } else {
     arrow = '↓';
     word = 'Shorter';
-    color = '#b3574a';
+    color = 'var(--daylength-shorter)';
     bracket = ` (-${minutes}m ${seconds}s)`;
   }
 
@@ -1394,10 +1423,10 @@ const POLLEN_SPECIES = [
 ];
 
 function getPollenCategory(value, seasonStart, peak) {
-  if (value <= 0) return { label: 'None', color: '#9c8267' };
-  if (value < seasonStart) return { label: 'Present', color: '#4a90d9' };
-  if (value < peak) return { label: 'Elevated', color: '#ff9800' };
-  return { label: 'Peak', color: '#f44336' };
+  if (value <= 0) return { label: 'None', color: 'var(--text-muted)' };
+  if (value < seasonStart) return { label: 'Present', color: 'var(--precip)' };
+  if (value < peak) return { label: 'Elevated', color: 'var(--scale-elevated)' };
+  return { label: 'Peak', color: 'var(--scale-high)' };
 }
 
 function buildPollenForecast(air) {
@@ -1993,6 +2022,7 @@ radarMapEl.addEventListener('touchend', endRadarTouch);
 radarMapEl.addEventListener('touchcancel', cancelRadarTouch);
 
 // Show a default city as soon as the page loads.
+applyThemeToggleUI();
 applyUnitToggleUI();
 cityInput.value = 'Tampere';
 updateClearButtonVisibility();

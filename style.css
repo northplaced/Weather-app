@@ -2,12 +2,147 @@
    Theme tokens
 
    Every colour, shadow, filter, font and animation in this file resolves
-   through one of these. Nothing below this block contains a raw colour
+   through one of these. Nothing below these blocks contains a raw colour
    literal -- if you find yourself typing a hex value further down, it wants
-   to be a token instead, defined in every theme block.
+   to be a token instead, defined in BOTH blocks.
+
+   :root is Synthwave, the default -- it applies when no data-theme attribute
+   is set. html[data-theme="classic"] is the original warm brown scheme.
+
+   Both blocks define the complete set and neither inherits from the other, so
+   a token added to one can't silently fall back to the other theme's value.
+   The two are kept in sync by hand; they should always have identical key
+   lists. script.js flips the attribute on <html> and everything re-resolves,
+   including the colours it sets inline as var() references.
    ========================================================================== */
 
 :root {
+  color-scheme: dark;
+
+  /* Typography */
+  --font-display: 'Orbitron', 'Rajdhani', Arial, Helvetica, sans-serif;
+  --font-body: 'Rajdhani', Arial, Helvetica, sans-serif;
+  --display-tracking: 0.06em;
+  --temp-size: 3.05rem;
+
+  /* Backdrop. The hard 59.9%/60% stop in the gradient IS the horizon line, so
+     it needs no element of its own; the grid and sun are drawn as fixed
+     pseudo-elements that hang off it. */
+  --bg-base: #0b0120;
+  --bg-gradient:
+    radial-gradient(140% 46% at 50% 60%, rgba(255, 45, 149, 0.38), transparent 72%),
+    linear-gradient(180deg,
+      #0b0120 0%, #17053a 24%, #350c58 44%,
+      #6b1560 58%, #a81e6d 59.9%,
+      #0d0126 60%, #10012b 100%);
+  --bg-attachment: fixed;
+  --backdrop-display: block;
+  --grid-line: rgba(0, 245, 255, 0.55);
+  --grid-line-alt: rgba(255, 45, 149, 0.3);
+  --grid-anim: grid-scroll 2.6s linear infinite;
+  --sun-top: #fff3b0;
+  --sun-mid: #ff9d3c;
+  --sun-bottom: #ff2e88;
+  --sun-halo: rgba(255, 46, 136, 0.4);
+
+  /* Scanlines */
+  --scanline-color: rgba(0, 245, 255, 0.05);
+  --scanline-anim: scanline-drift 9s linear infinite;
+
+  /* Surfaces, borders, shadows. The neon card outline is the 0 0 0 1px spread
+     ring inside --shadow-card, NOT a real border -- a border would add 2px to
+     every panel and shift the layout away from the classic theme. */
+  --surface-card: rgba(28, 7, 56, 0.78);
+  --card-backdrop-filter: blur(10px) saturate(1.25);
+  --surface-raised: rgba(11, 2, 30, 0.88);
+  --surface-sunken: rgba(255, 45, 149, 0.1);
+  --surface-hover: rgba(0, 245, 255, 0.14);
+  --surface-hover-accent: rgba(255, 45, 149, 0.2);
+  --surface-accent-wash: rgba(0, 245, 255, 0.18);
+  --border-subtle: rgba(0, 245, 255, 0.36);
+  --border-hairline: rgba(255, 45, 149, 0.22);
+  --shadow-card:
+    0 0 0 1px rgba(255, 45, 149, 0.45),
+    0 0 24px rgba(255, 45, 149, 0.28),
+    0 18px 50px rgba(4, 0, 18, 0.75);
+  --shadow-dropdown:
+    0 0 0 1px rgba(0, 245, 255, 0.38),
+    0 0 22px rgba(0, 245, 255, 0.2),
+    0 16px 40px rgba(4, 0, 18, 0.82);
+
+  /* Text tiers. Contrast against the effective card colour (#1c0736):
+     primary 15.9:1, body 11.1:1, secondary 7.4:1, muted 5.6:1. The app has a
+     lot of 0.5-0.7rem text, so muted must not drop below ~5:1. */
+  --text-primary: #f4ecff;
+  --text-secondary: #bcaaee;
+  --text-muted: #9d8fd0;
+  --text-body: #d9cff5;
+  --text-on-accent: #150031;
+  --text-on-accent-strong: #150031;
+
+  /* Accent */
+  --accent: #ff2d95;
+  --accent-hover: #ff5fae;
+  --accent-focus: #00f5ff;
+  --temp-accent: #5ef7ff;
+
+  /* Glow and motion */
+  --glow-heading: 0 0 6px rgba(255, 45, 149, 0.75), 0 0 18px rgba(255, 45, 149, 0.35);
+  --glow-accent: 0 0 10px rgba(255, 45, 149, 0.55), 0 0 24px rgba(255, 45, 149, 0.3);
+  --glow-temp: 0 0 10px rgba(0, 240, 255, 0.75), 0 0 30px rgba(0, 240, 255, 0.35);
+  --glow-value: 0 0 6px rgba(0, 240, 255, 0.3);
+  --temp-anim: temp-pulse 3.4s ease-in-out infinite;
+  --focus-ring: 0 0 0 2px var(--accent-focus), 0 0 14px rgba(0, 245, 255, 0.35);
+
+  /* Ordered data scale. Hue rotates cool -> extreme exactly as the classic
+     scale does, AND relative lightness falls monotonically from --scale-moderate
+     down, so the ordering still reads if hue is unavailable. --scale-extreme is
+     deliberately dark rather than bright: it means "off the scale". */
+  --scale-cool: #22d3ff;
+  --scale-good: #39ff9e;
+  --scale-moderate: #ffe95c;
+  --scale-elevated: #ff9f2e;
+  --scale-high: #ff3b6b;
+  --scale-severe: #c14bff;
+  --scale-extreme: #8e0b3a;
+
+  /* Domain colours. --precip stays bluer than --scale-cool so precipitation
+     text never reads as an air-quality value. */
+  --precip: #4d9dff;
+  --snow-fill: #b8c9ff;
+  --snow-text: #9db4e8;
+  --sun-track: #ffb347;
+  --sun-marker: #ffd166;
+  --sun-glow: rgba(255, 180, 60, 0.3);
+  --moon-track: #8fb8ff;
+  --moon-marker: #cfe3ff;
+  --moon-glow: rgba(143, 184, 255, 0.25);
+  --arc-baseline: rgba(0, 245, 255, 0.26);
+  --arc-remaining: rgba(0, 245, 255, 0.3);
+  --arc-marker-stroke: #180634;
+  --arc-filter: drop-shadow(0 0 3px rgba(0, 245, 255, 0.35));
+  --icon-filter: saturate(1.15) drop-shadow(0 0 8px rgba(0, 245, 255, 0.22));
+
+  /* Trend indicators (also referenced from script.js) */
+  --daylength-longer: #39ff9e;
+  --daylength-shorter: #ff6b8a;
+
+  /* Radar panel chrome */
+  --radar-map-bg: #0b1020;
+  --radar-base-filter: invert(1) hue-rotate(185deg) saturate(0.65) brightness(0.82) contrast(1.12);
+  --radar-marker: #ff2d95;
+  --radar-marker-ring: rgba(255, 255, 255, 0.92);
+  --radar-marker-shadow: 0 0 9px rgba(255, 45, 149, 0.9);
+  --radar-btn-bg: rgba(20, 6, 45, 0.92);
+  --radar-btn-fg: #00f5ff;
+  --radar-btn-bg-hover: rgba(48, 13, 86, 0.96);
+  --radar-btn-shadow: 0 0 0 1px rgba(0, 245, 255, 0.5), 0 0 10px rgba(0, 245, 255, 0.32);
+
+  /* Misc */
+  --scrollbar-color: var(--accent) transparent;
+}
+
+html[data-theme="classic"] {
   color-scheme: light;
 
   /* Typography */
@@ -66,6 +201,7 @@
   --glow-temp: none;
   --glow-value: none;
   --temp-anim: none;
+  --focus-ring: none;
 
   /* Ordered data scale -- shared by the UV, AQI, humidity, wind and pressure
      bars. Must always read as an ordered progression, cool -> extreme. */
@@ -132,6 +268,116 @@ body {
   padding: 24px 0;
 }
 
+/* --------------------------------------------------------------------------
+   Backdrop: perspective grid, horizon sun, scanlines.
+
+   All three are position: fixed, which is load-bearing twice over. It keeps
+   them out of body's flex flow (an in-flow pseudo-element would become a flex
+   item and eat a 24px gap slot, shifting the whole page down), and it pins
+   them to the viewport so they stay put while the page scrolls.
+
+   They sit on negative z-indexes. body sets no transform/filter/opacity, so it
+   creates no stacking context and these land in the root's negative layer:
+   above the propagated body background, below every panel. The existing
+   z-indexes in the app (.suggestions 30, .radar-zoom-controls 20, .marker 10)
+   all live inside .card / #radar-map subtrees and never interact with these.
+
+   Never give <html> a background. That would stop body's background
+   propagating to the canvas and invert this whole stack.
+   -------------------------------------------------------------------------- */
+
+html::before {
+  /* The grid floor. Hinged at its TOP edge and tipped away from the viewer, so
+     the top edge converges at the vanishing point on the horizon and the
+     bottom edge fills the foreground. Over-wide (left/right: -50%) so the
+     perspective foreshortening never exposes empty gutters at the sides. */
+  content: '';
+  position: fixed;
+  left: -50%;
+  right: -50%;
+  bottom: 0;
+  height: 62vh;
+  z-index: -3;
+  display: var(--backdrop-display);
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to right, var(--grid-line) 0 2px, transparent 2px 84px),
+    repeating-linear-gradient(to bottom, var(--grid-line-alt) 0 2px, transparent 2px 84px);
+  transform: perspective(300px) rotateX(63deg);
+  transform-origin: 50% 0%;
+  /* Fades out the far rows, where the horizontal lines converge to sub-pixel
+     spacing and would otherwise moire badly. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  animation: var(--grid-anim);
+  will-change: background-position;
+}
+
+body::before {
+  /* The setting sun. The slats widen towards the bottom, which needs a single
+     non-repeating gradient mask; a repeating one can only give even bands. */
+  content: '';
+  position: fixed;
+  left: 50%;
+  bottom: 40vh;
+  width: min(540px, 78vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, 42%);
+  z-index: -2;
+  display: var(--backdrop-display);
+  pointer-events: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--sun-top) 0%, var(--sun-mid) 48%, var(--sun-bottom) 100%);
+  box-shadow: 0 0 130px 45px var(--sun-halo);
+  -webkit-mask-image: linear-gradient(to bottom,
+    #000 0 54%, transparent 54% 57%, #000 57% 64%, transparent 64% 68%,
+    #000 68% 74%, transparent 74% 79%, #000 79% 84%, transparent 84% 90%,
+    #000 90% 94%, transparent 94% 100%);
+  mask-image: linear-gradient(to bottom,
+    #000 0 54%, transparent 54% 57%, #000 57% 64%, transparent 64% 68%,
+    #000 68% 74%, transparent 74% 79%, #000 79% 84%, transparent 84% 90%,
+    #000 90% 94%, transparent 94% 100%);
+}
+
+body::after {
+  /* CRT scanlines. Kept behind the panels (z-index -1) rather than over the
+     whole page; striping the radar imagery and the 0.5rem text costs more
+     legibility than it buys atmosphere. */
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: var(--backdrop-display);
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, var(--scanline-color) 0 1px, transparent 1px 3px);
+  animation: var(--scanline-anim);
+}
+
+@keyframes grid-scroll {
+  /* Only the horizontal lines advance. Animating the vertical layer too would
+     make the grid look like it is sliding sideways instead of towards you. */
+  to { background-position: 0 0, 0 84px; }
+}
+
+@keyframes scanline-drift {
+  to { background-position: 0 3px; }
+}
+
+@keyframes temp-pulse {
+  /* Glow only, never transform: scale. .temp-big shares a grid track with
+     .feels-like and .hi-lo, so a scaling temperature would collide with them.
+     0%/100% equals the resting glow, so a frozen animation looks correct. */
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.72), 0 0 30px rgba(0, 240, 255, 0.32);
+  }
+  50% {
+    text-shadow:
+      0 0 16px rgba(0, 240, 255, 0.95),
+      0 0 52px rgba(0, 240, 255, 0.55),
+      0 0 80px rgba(255, 45, 149, 0.28);
+  }
+}
+
 .app-layout {
   display: flex;
   flex-wrap: wrap;
@@ -149,6 +395,8 @@ body {
   max-width: 440px;
   text-align: center;
   box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
 .radar-panel {
@@ -159,12 +407,17 @@ body {
   max-width: 600px;
   text-align: center;
   box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
 .radar-panel h3 {
   margin: 0 0 12px;
   font-size: 0.95rem;
   color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .radar-timeline {
@@ -228,6 +481,10 @@ body {
   height: 256px;
   pointer-events: none;
   -webkit-user-drag: none;
+}
+
+#radar-map img.base-tile {
+  filter: var(--radar-base-filter);
 }
 
 #radar-map .marker {
@@ -323,12 +580,17 @@ body {
   max-width: 440px;
   text-align: center;
   box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
 .pollen-panel h3 {
   margin: 0 0 16px;
   font-size: 0.95rem;
   color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .pollen-placeholder {
@@ -458,6 +720,9 @@ h1 {
   margin-top: 0;
   font-size: 1.5rem;
   color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .card-header {
@@ -469,6 +734,7 @@ h1 {
 
 .card-header h1 {
   text-align: left;
+  margin-right: auto;
 }
 
 .unit-toggle {
@@ -495,6 +761,27 @@ h1 {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--text-on-accent);
+  box-shadow: var(--glow-accent);
+}
+
+/* A single pill rather than a segmented pair: the header already carries the
+   h1 and the unit toggle, and at the 430px breakpoint a second two-button
+   group would overflow the card. */
+.theme-toggle-btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--surface-hover);
 }
 
 #search-form {
@@ -521,6 +808,7 @@ h1 {
 #city-input:focus {
   outline: none;
   border-color: var(--accent-focus);
+  box-shadow: var(--focus-ring);
 }
 
 .clear-input-btn {
@@ -617,6 +905,14 @@ button {
   color: var(--text-on-accent-strong);
   font-size: 1rem;
   cursor: pointer;
+  font-family: var(--font-body);
+}
+
+/* Scoped to the submit button rather than sitting on `button` above, which
+   also matches the unit toggle, the clear-input X and the theme pill; those
+   set their own backgrounds and would just pick up a stray halo. */
+#search-form button[type="submit"] {
+  box-shadow: var(--glow-accent);
 }
 
 button:hover {
@@ -642,6 +938,9 @@ button:hover {
   font-size: 0.95rem;
   color: var(--text-secondary);
   margin: 20px 0 8px;
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .section-header {
@@ -699,6 +998,7 @@ button:hover {
 .current-icon {
   font-size: 3.5rem;
   line-height: 1;
+  filter: var(--icon-filter);
 }
 
 .condition {
@@ -712,10 +1012,13 @@ button:hover {
 }
 
 .temp-big {
-  font-size: 3.5rem;
+  font-size: var(--temp-size);
   font-weight: bold;
   margin: 4px 0;
   color: var(--temp-accent);
+  font-family: var(--font-display);
+  text-shadow: var(--glow-temp);
+  animation: var(--temp-anim);
 }
 
 .feels-like,
@@ -870,6 +1173,7 @@ button:hover {
   font-weight: bold;
   color: var(--text-primary);
   margin-top: 6px;
+  text-shadow: var(--glow-value);
 }
 
 .value-secondary {
@@ -1275,6 +1579,7 @@ button:hover {
   max-width: 420px;
   height: auto;
   align-self: center;
+  filter: var(--arc-filter);
 }
 
 .sun-arc text {
@@ -1357,6 +1662,7 @@ button:hover {
   font-size: 1.1rem;
   font-weight: bold;
   color: var(--text-primary);
+  text-shadow: var(--glow-value);
 }
 
 .sun-arc-caption-value-wrap {
@@ -1448,6 +1754,7 @@ button:hover {
   max-width: 420px;
   height: auto;
   align-self: center;
+  filter: var(--arc-filter);
 }
 
 .moon-arc text {
@@ -1530,6 +1837,7 @@ button:hover {
   font-size: 1.1rem;
   font-weight: bold;
   color: var(--text-primary);
+  text-shadow: var(--glow-value);
 }
 
 .moon-phase-value {
@@ -1743,4 +2051,82 @@ button:hover {
   font-size: 0.65rem;
   font-weight: normal;
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Synthwave-only rules
+
+   These three can't be expressed as token values, so unlike everything above
+   they have to be scoped to the theme by hand. :not([data-theme="classic"])
+   rather than [data-theme="synthwave"], because synthwave is also what you get
+   when no attribute is set at all.
+   ========================================================================== */
+
+/* Chromium's scrollbars. color-scheme already darkens the native ones in both
+   Chromium and Firefox; scrollbar-color handles Firefox's tint, and these
+   handle Chromium's. .hourly-scroll and .suggestions are the two scrollers. */
+html:not([data-theme="classic"]) .hourly-scroll,
+html:not([data-theme="classic"]) .suggestions {
+  scrollbar-color: var(--scrollbar-color);
+  scrollbar-width: thin;
+}
+
+html:not([data-theme="classic"]) .hourly-scroll::-webkit-scrollbar,
+html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html:not([data-theme="classic"]) .hourly-scroll::-webkit-scrollbar-track,
+html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar-track {
+  background: var(--surface-sunken);
+  border-radius: 4px;
+}
+
+html:not([data-theme="classic"]) .hourly-scroll::-webkit-scrollbar-thumb,
+html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+/* Without backdrop-filter the panels would sit as flat 78%-opaque violet over
+   a bright gradient, which drops the small muted text under 4.5:1. Going
+   near-opaque is the safe fallback. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html:not([data-theme="classic"]) {
+    --surface-card: rgba(24, 6, 50, 0.94);
+  }
+}
+
+/* ==========================================================================
+   Reduced motion
+
+   The universal rule is the safety net and does cover ::before/::after; the
+   three explicit rules make the intent readable and, for .temp-big, pin the
+   glow to its resting value rather than whatever frame it froze on.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html::before {
+    animation: none !important;
+  }
+
+  body::after {
+    animation: none !important;
+  }
+
+  .temp-big {
+    animation: none !important;
+    text-shadow: var(--glow-temp);
+  }
 }
