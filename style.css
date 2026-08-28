@@ -1292,14 +1292,28 @@ button:hover {
   /* Vertical bars intentionally hidden (color-matched to the card background) until the
      spacing/sizing work is resumed — see TODO.md. Kept as real borders (not display:none) so
      the layout footprint stays put and nothing shifts when they're switched back on. */
-  border-left: 1.5px solid #fdf3e7;
-  border-right: 1.5px solid #fdf3e7;
-  padding: 0 12px;
+  border-left: 1px solid #fdf3e7;
+  border-right: 1px solid #fdf3e7;
+  padding: 0 2px;
   font-size: 0.65rem;
   line-height: 1.2;
   color: #6b4e34;
   text-align: center;
   white-space: nowrap;
+}
+
+.golden-hour-divider-compact {
+  display: none;
+}
+
+@media (max-width: 430px) {
+  .golden-hour-divider-compact {
+    display: inline;
+  }
+
+  .golden-hour-divider-full {
+    display: none;
+  }
 }
 
 .golden-hour-row {

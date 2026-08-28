@@ -774,7 +774,10 @@ function buildGoldenBlueHour(sunriseDate, sunsetDate) {
         <div class="golden-hour-row">🔵 ${formatTime(morningBlueStart)}-${formatTime(sunriseDate)} 🌅</div>
         <div class="golden-hour-row">🟡 ${formatTime(sunriseDate)}-${formatTime(morningGoldenEnd)} ☀️</div>
       </div>
-      <div class="golden-hour-divider">← 📷 Golden &amp; blue hours →</div>
+      <div class="golden-hour-divider">
+        <span class="golden-hour-divider-compact">📷</span>
+        <span class="golden-hour-divider-full">«📷Golden &amp; blue hours»</span>
+      </div>
       <div class="golden-hour-col">
         <div class="golden-hour-row">🟡 ${formatTime(eveningGoldenStart)}-${formatTime(sunsetDate)} 🌇</div>
         <div class="golden-hour-row">🔵 ${formatTime(sunsetDate)}-${formatTime(eveningBlueEnd)} 🌙</div>
