@@ -52,7 +52,10 @@
   /* Surfaces, borders, shadows. The neon card outline is the 0 0 0 1px spread
      ring inside --shadow-card, NOT a real border -- a border would add 2px to
      every panel and shift the layout away from the classic theme. */
-  --surface-card: rgba(28, 7, 56, 0.78);
+  /* 0.88 rather than a more translucent 0.78: panels scroll over the sun disc,
+     and at 0.78 the muted tier lands at 4.3:1 against that brighter composite,
+     just under AA -- and muted carries most of the 0.5-0.7rem text. */
+  --surface-card: rgba(28, 7, 56, 0.88);
   --card-backdrop-filter: blur(10px) saturate(1.25);
   --surface-raised: rgba(11, 2, 30, 0.88);
   --surface-sunken: rgba(255, 45, 149, 0.1);
@@ -70,9 +73,12 @@
     0 0 22px rgba(0, 245, 255, 0.2),
     0 16px 40px rgba(4, 0, 18, 0.82);
 
-  /* Text tiers. Contrast against the effective card colour (#1c0736):
-     primary 15.9:1, body 11.1:1, secondary 7.4:1, muted 5.6:1. The app has a
-     lot of 0.5-0.7rem text, so muted must not drop below ~5:1. */
+  /* Text tiers. Measured contrast against the composited card, over the sky
+     (#1b0738) and in the worst case over the sun disc:
+       primary 16.1 / 13.4    body      12.5 / 10.4
+       secondary 8.9 / 7.4    muted      6.4 / 5.3
+     The app has a lot of 0.5-0.7rem text, so muted is the tier that matters;
+     keep it above 4.5:1 in the sun column if these values are ever changed. */
   --text-primary: #f4ecff;
   --text-secondary: #bcaaee;
   --text-muted: #9d8fd0;
@@ -728,13 +734,22 @@ h1 {
 .card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* flex-end rather than space-between, which are equivalent on a single row
+     given the h1's margin-right: auto below, but differ once the row wraps:
+     space-between strands the wrapped control on the far left. */
+  justify-content: flex-end;
   gap: 12px;
+  /* Three controls now compete for this row. Without wrapping, the h1 is the
+     flex item that gives way and breaks "Weather App" across two lines on
+     narrow screens; wrapping keeps the title whole and drops the theme pill to
+     its own right-aligned row instead. Only happens below ~380px. */
+  flex-wrap: wrap;
 }
 
 .card-header h1 {
   text-align: left;
   margin-right: auto;
+  white-space: nowrap;
 }
 
 .unit-toggle {
@@ -2128,5 +2143,16 @@ html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar-thumb {
   .temp-big {
     animation: none !important;
     text-shadow: var(--glow-temp);
+  }
+}
+
+/* Orbitron is a lot wider than Arial at the same size, so on narrow screens
+   "Weather App" no longer fits the header row beside the unit toggle and the
+   theme pill, and wraps to two lines. Scoped to the theme that has the problem
+   so classic keeps its original heading size at every width. */
+@media (max-width: 430px) {
+  html:not([data-theme="classic"]) h1 {
+    font-size: 1.25rem;
+    letter-spacing: 0.03em;
   }
 }
