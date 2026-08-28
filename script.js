@@ -2143,7 +2143,106 @@ playerToggle.addEventListener('click', () => {
 
 playerStop.addEventListener('click', teardownPlayer);
 
+// Detecting a failed embed is trickier than it looks. onReady fires even for a
+// video that cannot play at all — it reports that the player *shell* is up, not
+// that there is anything to play — and YouTube's "Video player configuration
+// error" (153) renders inside the iframe without necessarily firing onError.
+// Measured, the two cases differ like this:
+//
+//   working   onReady, states -1 -> 3 -> 1, getDuration() 235
+//   broken    onReady, no state changes at all, getDuration() 0
+//
+// So the success condition is that the player actually reaches BUFFERING,
+// PLAYING or CUED — never onReady on its own. A non-zero duration at the
+// timeout counts too, which covers a browser that refused to autoplay but has
+// the video loaded and ready.
+//
+// A failed attempt is retried against the nocookie host, which some privacy
+// settings and content blockers permit when the standard host is blocked. Not a
+// guaranteed fix, but it costs one retry.
+const PLAYER_HOSTS = ['https://www.youtube.com', 'https://www.youtube-nocookie.com'];
+const PLAYER_START_TIMEOUT = 9000;
+
+function attemptPlayer(host) {
+  return new Promise((resolve) => {
+    // YT.Player replaces the element it is given, so it gets a throwaway mount
+    // node rather than the stage itself.
+    const mount = document.createElement('div');
+    playerStage.innerHTML = '';
+    playerStage.appendChild(mount);
+
+    let settled = false;
+    let timer = null;
+    const settle = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
+
+    const player = new window.YT.Player(mount, {
+      host,
+      videoId: YT_VIDEO_ID,
+      playerVars: {
+        autoplay: 1,
+        playsinline: 1,
+        rel: 0,
+        // The native toolbar stays switched on deliberately: it carries the
+        // fullscreen button, which is the only way to actually watch the video
+        // rather than just listen to it.
+        controls: 1,
+        fs: 1,
+        ...(isWebOrigin ? { origin: window.location.origin } : {}),
+      },
+      events: {
+        onReady: (event) => {
+          event.target.setVolume(storedVolume());
+          event.target.playVideo();
+          event.target.getIframe().title = 'Synthwave background music player';
+        },
+        onStateChange: (event) => {
+          const states = window.YT.PlayerState;
+
+          if (event.data === states.BUFFERING
+            || event.data === states.PLAYING
+            || event.data === states.CUED) {
+            settle({ ok: true, player });
+          }
+
+          if (event.data === states.ENDED) {
+            // Loop. playerVars loop+playlist is the documented alternative but
+            // is unreliable for a single video, so ENDED is handled directly.
+            event.target.seekTo(0);
+            event.target.playVideo();
+            return;
+          }
+
+          const playing = event.data === states.PLAYING;
+          playerToggle.innerHTML = playing ? '&#10074;&#10074; Pause' : '&#9654; Play';
+        },
+        onError: (event) => settle({ ok: false, code: event.data, player }),
+      },
+    });
+
+    timer = setTimeout(() => {
+      let duration = 0;
+      try { duration = player.getDuration() || 0; } catch (error) { /* not far enough along to ask */ }
+      settle(duration > 0 ? { ok: true, player } : { ok: false, code: 'no-response', player });
+    }, PLAYER_START_TIMEOUT);
+  });
+}
+
 playerLaunch.addEventListener('click', async () => {
+  // Opened straight from disk there is no point trying: the page has no real
+  // origin and sends no Referer, and YouTube rejects the embed outright. Saying
+  // so beats letting the iframe show its own unexplained error.
+  if (window.location.protocol === 'file:') {
+    setPlayerNote('This page was opened straight from disk (file://), and YouTube will not '
+      + 'run an embedded player there. Serve the folder over http:// — e.g. "npx http-server . '
+      + '-p 5501" — then open http://localhost:5501 and the music will play.');
+    return;
+  }
+
   playerLaunch.disabled = true;
   playerLaunch.querySelector('span:last-child').textContent = 'Loading';
   setPlayerNote('');
@@ -2153,57 +2252,35 @@ playerLaunch.addEventListener('click', async () => {
   } catch (error) {
     playerLaunch.disabled = false;
     playerLaunch.querySelector('span:last-child').textContent = 'Play';
-    setPlayerNote('Could not reach YouTube. Open the track link below instead.');
+    setPlayerNote('Could not load the YouTube player script — an extension or content blocker '
+      + 'may be stopping it. Use the track link below instead.');
     return;
   }
 
-  // YT.Player replaces the element it is given, so it gets a throwaway mount
-  // node rather than the stage itself.
-  const mount = document.createElement('div');
-  playerStage.innerHTML = '';
-  playerStage.appendChild(mount);
   playerStage.classList.add('is-live');
+  let lastCode = null;
 
-  ytPlayer = new window.YT.Player(mount, {
-    videoId: YT_VIDEO_ID,
-    playerVars: {
-      autoplay: 1,
-      playsinline: 1,
-      rel: 0,
-      // The native toolbar stays switched on deliberately: it carries the
-      // fullscreen button, which is the only way to actually watch the video
-      // rather than just listen to it.
-      controls: 1,
-      fs: 1,
-      ...(isWebOrigin ? { origin: window.location.origin } : {}),
-    },
-    events: {
-      onReady: (event) => {
-        event.target.setVolume(storedVolume());
-        event.target.playVideo();
-        const frame = event.target.getIframe();
-        frame.title = 'Synthwave background music player';
-        playerControls.hidden = false;
-      },
-      onStateChange: (event) => {
-        const states = window.YT.PlayerState;
-        if (event.data === states.ENDED) {
-          // Loop. playerVars loop+playlist is the documented alternative but is
-          // unreliable for a single video, so the end state is handled directly.
-          event.target.seekTo(0);
-          event.target.playVideo();
-          return;
-        }
-        const playing = event.data === states.PLAYING;
-        playerToggle.innerHTML = playing ? '&#10074;&#10074; Pause' : '&#9654; Play';
-      },
-      onError: (event) => {
-        setPlayerNote(YT_ERROR_MESSAGES[event.data]
-          || `The player reported error ${event.data}. Use the track link below.`);
-        teardownPlayer();
-      },
-    },
-  });
+  for (const host of PLAYER_HOSTS) {
+    const result = await attemptPlayer(host);
+    if (result.ok) {
+      ytPlayer = result.player;
+      playerControls.hidden = false;
+      setPlayerNote('');
+      return;
+    }
+    lastCode = result.code;
+    try { result.player.destroy(); } catch (error) { /* already gone */ }
+  }
+
+  // Every host failed. Report what was actually observed rather than a generic
+  // apology, so the cause is diagnosable from the page itself.
+  const detail = typeof lastCode === 'number'
+    ? (YT_ERROR_MESSAGES[lastCode] || `The player reported error ${lastCode}.`)
+    : 'The player never finished starting up — usually a content blocker, strict tracking '
+      + 'protection, or blocked third-party cookies for youtube.com.';
+  setPlayerNote(`${detail} (page served over ${window.location.protocol}) `
+    + 'The track link below always works.');
+  teardownPlayer();
 });
 
 setPlayerNote('');
