@@ -2027,3 +2027,163 @@ applyUnitToggleUI();
 cityInput.value = 'Tampere';
 updateClearButtonVisibility();
 searchCity('Tampere');
+
+// ---------------------------------------------------------------------------
+// Synthwave radio
+//
+// Plays one track through YouTube's IFrame Player API. Two constraints shape
+// the whole design:
+//
+//   1. YouTube's terms require the player to stay visible while it plays, and
+//      don't allow separating the audio from the video. So there is no hidden
+//      player and no "keep playing while collapsed" — Stop destroys the player
+//      outright, which is also the only way to be sure the audio has stopped.
+//   2. Browsers refuse autoplay with sound without a user gesture, so nothing
+//      can start on page load. Playback always begins from the Play button.
+//
+// The API script is fetched on that first press rather than at page load, so
+// visitors who never touch the music load no third-party code at all.
+// ---------------------------------------------------------------------------
+
+const YT_VIDEO_ID = 'Z4F6HFn6IZU';
+const VOLUME_STORAGE_KEY = 'weatherapp-volume';
+
+const playerStage = document.getElementById('player-stage');
+const playerLaunch = document.getElementById('player-launch');
+const playerControls = document.getElementById('player-controls');
+const playerToggle = document.getElementById('player-toggle');
+const playerStop = document.getElementById('player-stop');
+const playerVolume = document.getElementById('player-volume');
+const playerNote = document.getElementById('player-note');
+
+let ytPlayer = null;
+let ytApiPromise = null;
+
+function storedVolume() {
+  const raw = Number(localStorage.getItem(VOLUME_STORAGE_KEY));
+  return Number.isFinite(raw) && raw >= 0 && raw <= 100 ? raw : 60;
+}
+
+// Resolves once window.YT is usable. The API calls a single global hook when it
+// loads, so this chains onto any existing one rather than overwriting it, and
+// caches the promise so a second press never injects the script twice.
+function loadYouTubeApi() {
+  if (ytApiPromise) return ytApiPromise;
+
+  ytApiPromise = new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) {
+      resolve(window.YT);
+      return;
+    }
+    const previousHook = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof previousHook === 'function') previousHook();
+      resolve(window.YT);
+    };
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.onerror = () => reject(new Error('script blocked'));
+    document.head.appendChild(tag);
+  });
+
+  return ytApiPromise;
+}
+
+function setPlayerNote(message) {
+  playerNote.textContent = message || '';
+  playerNote.style.display = message ? 'block' : 'none';
+}
+
+// Back to the pre-play state: no player, no audio, just the Play button.
+function teardownPlayer() {
+  if (ytPlayer) {
+    ytPlayer.destroy();
+    ytPlayer = null;
+  }
+  playerStage.innerHTML = '';
+  playerStage.appendChild(playerLaunch);
+  playerLaunch.disabled = false;
+  playerLaunch.querySelector('span:last-child').textContent = 'Play';
+  playerControls.hidden = true;
+  playerStage.classList.remove('is-live');
+}
+
+playerVolume.value = String(storedVolume());
+
+playerVolume.addEventListener('input', () => {
+  const level = Number(playerVolume.value);
+  localStorage.setItem(VOLUME_STORAGE_KEY, String(level));
+  if (ytPlayer) ytPlayer.setVolume(level);
+});
+
+playerToggle.addEventListener('click', () => {
+  if (!ytPlayer) return;
+  const state = ytPlayer.getPlayerState();
+  if (state === window.YT.PlayerState.PLAYING) {
+    ytPlayer.pauseVideo();
+  } else {
+    ytPlayer.playVideo();
+  }
+});
+
+playerStop.addEventListener('click', teardownPlayer);
+
+playerLaunch.addEventListener('click', async () => {
+  playerLaunch.disabled = true;
+  playerLaunch.querySelector('span:last-child').textContent = 'Loading';
+  setPlayerNote('');
+
+  try {
+    await loadYouTubeApi();
+  } catch (error) {
+    playerLaunch.disabled = false;
+    playerLaunch.querySelector('span:last-child').textContent = 'Play';
+    setPlayerNote('Could not reach YouTube. Open the track link below instead.');
+    return;
+  }
+
+  // YT.Player replaces the element it is given, so it gets a throwaway mount
+  // node rather than the stage itself.
+  const mount = document.createElement('div');
+  playerStage.innerHTML = '';
+  playerStage.appendChild(mount);
+  playerStage.classList.add('is-live');
+
+  ytPlayer = new window.YT.Player(mount, {
+    videoId: YT_VIDEO_ID,
+    playerVars: {
+      autoplay: 1,
+      playsinline: 1,
+      rel: 0,
+      modestbranding: 1,
+      origin: window.location.origin,
+    },
+    events: {
+      onReady: (event) => {
+        event.target.setVolume(storedVolume());
+        event.target.playVideo();
+        const frame = event.target.getIframe();
+        frame.title = 'Synthwave background music player';
+        playerControls.hidden = false;
+      },
+      onStateChange: (event) => {
+        const states = window.YT.PlayerState;
+        if (event.data === states.ENDED) {
+          // Loop. playerVars loop+playlist is the documented alternative but is
+          // unreliable for a single video, so the end state is handled directly.
+          event.target.seekTo(0);
+          event.target.playVideo();
+          return;
+        }
+        const playing = event.data === states.PLAYING;
+        playerToggle.innerHTML = playing ? '&#10074;&#10074; Pause' : '&#9654; Play';
+      },
+      onError: () => {
+        setPlayerNote('This track cannot be embedded here. Use the link below.');
+        teardownPlayer();
+      },
+    },
+  });
+});
+
+setPlayerNote('');

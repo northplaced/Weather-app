@@ -2069,6 +2069,173 @@ button:hover {
 }
 
 /* ==========================================================================
+   Synthwave radio
+
+   Mirrors the .pollen-outer / .pollen-panel pair so the deck lines up with the
+   card and pollen panels above it. The stage keeps a fixed minimum height in
+   both states, so swapping the Play button for the YouTube player doesn't
+   shift the page.
+   ========================================================================== */
+
+.player-outer {
+  width: 90%;
+  max-width: 1064px;
+  display: flex;
+}
+
+.player-panel {
+  background: var(--surface-card);
+  border-radius: 12px;
+  padding: 24px 32px;
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
+}
+
+.player-panel h3 {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
+}
+
+.player-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 220px, not the 200px the IFrame API requires as a minimum: the extra 20
+     leaves room for YouTube's own control bar without it overlapping the art. */
+  min-height: 220px;
+  border-radius: 10px;
+  background: var(--surface-sunken);
+}
+
+/* YT.Player swaps in an iframe with its own width/height attributes, so these
+   have to win. Both dimensions stay at or above the 200px floor the IFrame API
+   documents, at every viewport width the panel can reach. */
+.player-stage iframe {
+  width: 100%;
+  max-width: 356px;
+  min-width: 200px;
+  height: 220px;
+  border: 0;
+  border-radius: 10px;
+  display: block;
+}
+
+.player-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 26px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent-strong);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: var(--display-tracking);
+  cursor: pointer;
+  box-shadow: var(--glow-accent);
+}
+
+.player-launch:hover {
+  background: var(--accent-hover);
+}
+
+.player-launch:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.player-launch-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.player-meta {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.player-track {
+  font-weight: bold;
+}
+
+.player-artist {
+  color: var(--text-muted);
+}
+
+.player-artist::before {
+  content: ' · ';
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+
+.player-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.player-btn:hover {
+  background: var(--surface-hover);
+}
+
+.player-volume-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-volume-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+#player-volume {
+  width: 90px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.player-note {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.player-attribution {
+  margin: 10px 0 0;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.player-attribution a {
+  color: inherit;
+}
+
+/* ==========================================================================
    Synthwave-only rules
 
    These three can't be expressed as token values, so unlike everything above

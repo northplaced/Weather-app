@@ -87,6 +87,46 @@
     </section>
   </div>
 
+  <!-- The YouTube player is only created once the listener presses play, so no
+       third-party script loads until then. It stays visible for as long as it
+       exists: YouTube's terms do not allow hiding the player or playing its
+       audio on its own, so "stop" destroys the player rather than concealing
+       a still-playing one. -->
+  <div class="player-outer">
+    <section class="player-panel">
+      <h3>🎛️ Synthwave radio</h3>
+
+      <div class="player-stage" id="player-stage">
+        <button type="button" class="player-launch" id="player-launch">
+          <span class="player-launch-icon" aria-hidden="true">&#9654;</span>
+          <span>Play</span>
+        </button>
+      </div>
+
+      <p class="player-meta">
+        <span class="player-track">DownShift</span>
+        <span class="player-artist">Sub Morphine</span>
+      </p>
+
+      <div class="player-controls" id="player-controls" hidden>
+        <button type="button" id="player-toggle" class="player-btn">&#10074;&#10074; Pause</button>
+        <label class="player-volume-wrap">
+          <span class="player-volume-label">Vol</span>
+          <input type="range" id="player-volume" min="0" max="100" step="1" value="60"
+                 aria-label="Music volume">
+        </label>
+        <button type="button" id="player-stop" class="player-btn">&#9632; Stop</button>
+      </div>
+
+      <p class="player-note" id="player-note"></p>
+
+      <p class="player-attribution">
+        Music: <a href="https://www.youtube.com/watch?v=Z4F6HFn6IZU" target="_blank" rel="noopener">DownShift by Sub Morphine</a>,
+        played from YouTube
+      </p>
+    </section>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
