@@ -2054,6 +2054,13 @@ const RADIO_CHANNELS = [
 const VOLUME_STORAGE_KEY = 'weatherapp-volume';
 const CHANNEL_STORAGE_KEY = 'weatherapp-radio-channel';
 
+// What a first-time listener gets. Kept as named constants rather than the
+// first channel in the list, so the picker's running order stays free to change
+// without silently moving the default. The volume default is mirrored by the
+// input's value attribute in index.html.
+const DEFAULT_VOLUME = 33;
+const DEFAULT_CHANNEL = 'chillsynth';
+
 const playerToggle = document.getElementById('player-toggle');
 const playerToggleLabel = document.getElementById('player-toggle-label');
 const playerToggleIcon = playerToggle.querySelector('.player-launch-icon');
@@ -2070,14 +2077,14 @@ radio.preload = 'none';
 // yet would otherwise get a silent player and no clue why.
 function storedVolume() {
   const raw = localStorage.getItem(VOLUME_STORAGE_KEY);
-  if (raw === null) return 60;
+  if (raw === null) return DEFAULT_VOLUME;
   const level = Number(raw);
-  return Number.isFinite(level) && level >= 0 && level <= 100 ? level : 60;
+  return Number.isFinite(level) && level >= 0 && level <= 100 ? level : DEFAULT_VOLUME;
 }
 
 function storedChannel() {
   const saved = localStorage.getItem(CHANNEL_STORAGE_KEY);
-  return RADIO_CHANNELS.some((channel) => channel.id === saved) ? saved : RADIO_CHANNELS[0].id;
+  return RADIO_CHANNELS.some((channel) => channel.id === saved) ? saved : DEFAULT_CHANNEL;
 }
 
 function setPlayerNote(message) {
