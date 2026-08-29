@@ -2256,6 +2256,19 @@ button:hover {
   }
 }
 
+.page-footer {
+  width: 90%;
+  max-width: 1064px;
+  margin-top: -8px;
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.page-footer a {
+  color: inherit;
+}
+
 /* ==========================================================================
    Synthwave-only rules
 
