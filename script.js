@@ -2042,14 +2042,20 @@ searchCity('Tampere');
 // always begins from the Play button; nothing autoplays on load.
 // ---------------------------------------------------------------------------
 
+// The ids double as the stream filename and as the "station" field in the
+// metadata feed, so they have to stay exactly as the station spells them.
 const RADIO_CHANNELS = [
-  { id: 'nightride', name: 'Synthwave' },
-  { id: 'chillsynth', name: 'Chillsynth' },
-  { id: 'datawave', name: 'Datawave' },
-  { id: 'spacesynth', name: 'Spacesynth' },
-  { id: 'darksynth', name: 'Darksynth' },
-  { id: 'horrorsynth', name: 'Horrorsynth' },
+  { id: 'nightride', name: 'Synthwave FM' },
+  { id: 'chillsynth', name: 'Chillsynth FM' },
+  { id: 'datawave', name: 'Datawave FM' },
+  { id: 'spacesynth', name: 'Spacesynth FM' },
+  { id: 'darksynth', name: 'Darksynth FM' },
+  { id: 'horrorsynth', name: 'Horrorsynth FM' },
 ];
+
+// Server-sent events, one JSON array per message, carrying the current track for
+// every station at once — so this is filtered down to the channel being played.
+const RADIO_META_URL = 'https://nightride.fm/meta';
 
 const VOLUME_STORAGE_KEY = 'weatherapp-volume';
 const CHANNEL_STORAGE_KEY = 'weatherapp-radio-channel';
@@ -2059,7 +2065,7 @@ const CHANNEL_STORAGE_KEY = 'weatherapp-radio-channel';
 // without silently moving the default. The volume default is mirrored by the
 // input's value attribute in index.html.
 const DEFAULT_VOLUME = 33;
-const DEFAULT_CHANNEL = 'chillsynth';
+const DEFAULT_CHANNEL = 'nightride';
 
 const playerToggle = document.getElementById('player-toggle');
 const playerToggleLabel = document.getElementById('player-toggle-label');
@@ -2067,10 +2073,74 @@ const playerToggleIcon = playerToggle.querySelector('.player-launch-icon');
 const playerVolume = document.getElementById('player-volume');
 const playerChannel = document.getElementById('player-channel');
 const playerChannelName = document.getElementById('player-channel-name');
+const playerNowPlaying = document.getElementById('player-nowplaying');
+const playerNowPlayingTrack = document.getElementById('player-nowplaying-track');
 const playerNote = document.getElementById('player-note');
 
 const radio = new Audio();
 radio.preload = 'none';
+
+let radioMeta = null;
+let radioMetaReceived = false;
+
+function setNowPlaying(text) {
+  // textContent, never innerHTML: these strings come off a third-party feed.
+  playerNowPlayingTrack.textContent = text || '';
+  playerNowPlaying.hidden = !text;
+}
+
+function stopMeta() {
+  if (radioMeta) {
+    radioMeta.close();
+    radioMeta = null;
+  }
+  radioMetaReceived = false;
+  setNowPlaying('');
+}
+
+// One feed carries every station, and reconnecting replays the current track for
+// all of them straight away — which is why a channel change reopens the stream
+// rather than just changing the filter. Waiting for the next track to roll round
+// would leave the line blank for minutes.
+function startMeta() {
+  stopMeta();
+
+  const channel = storedChannel();
+  let source;
+  try {
+    source = new EventSource(RADIO_META_URL);
+  } catch (error) {
+    return; // no metadata; the line simply stays hidden
+  }
+  radioMeta = source;
+
+  source.onmessage = (event) => {
+    let rows;
+    try {
+      rows = JSON.parse(event.data);
+    } catch (error) {
+      return;
+    }
+    if (!Array.isArray(rows)) return;
+
+    const match = rows.find((row) => row && row.station === channel);
+    if (!match) return;
+
+    radioMetaReceived = true;
+    const title = (match.title || '').trim();
+    const artist = (match.artist || '').trim();
+    if (!title && !artist) return;
+    setNowPlaying(artist && title ? `${title} — ${artist}` : title || artist);
+  };
+
+  source.onerror = () => {
+    // EventSource retries on its own, which is what a dropped connection wants.
+    // But if nothing ever arrived the feed is unreachable for this page — most
+    // likely opened from disk, where the cross-origin request is refused — so
+    // stop retrying and leave the line hidden rather than looping forever.
+    if (!radioMetaReceived) stopMeta();
+  };
+}
 
 // Null has to be rejected before the range check, not by it: Number(null) is 0,
 // which is a perfectly valid volume, so a first-time listener with nothing saved
@@ -2106,6 +2176,7 @@ function disconnectRadio() {
   radio.pause();
   radio.removeAttribute('src');
   radio.load();
+  stopMeta();
   setToggleState('idle');
 }
 
@@ -2115,6 +2186,7 @@ function connectRadio() {
   radio.volume = storedVolume() / 100;
   setToggleState('connecting');
   setPlayerNote('');
+  startMeta();
 
   const attempt = radio.play();
   if (attempt && typeof attempt.catch === 'function') {

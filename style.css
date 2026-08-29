@@ -2151,12 +2151,19 @@ button:hover {
   font-weight: bold;
 }
 
-.player-artist {
-  color: var(--text-muted);
+.player-nowplaying {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  /* Track names run long and the deck is a fixed row, so this truncates rather
+     than pushing the controls around every time the song changes. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.player-artist::before {
-  content: ' · ';
+.player-nowplaying-label {
+  color: var(--text-muted);
 }
 
 .player-controls {
