@@ -18,10 +18,12 @@
   <rect width="64" height="64" rx="14" fill="#332a52"/>
   <circle cx="32" cy="32" r="27" fill="#6d3d73"/>
   <circle cx="32" cy="32" r="21" fill="url(#sun)"/>
+  <!-- Same three-slat spacing as the toggle icon, so both read as one mark.
+       The last slat runs past the bottom of the disc on purpose, so no thin
+       crescent is left hanging below it. -->
   <g fill="#6d3d73" clip-path="url(#sun-clip)">
-    <rect x="4" y="33.2" width="56" height="2"/>
-    <rect x="4" y="38.2" width="56" height="2.6"/>
-    <rect x="4" y="43.8" width="56" height="3.2"/>
-    <rect x="4" y="50.0" width="56" height="3.8"/>
+    <rect x="4" y="34.1" width="56" height="3.6"/>
+    <rect x="4" y="41.4" width="56" height="4"/>
+    <rect x="4" y="48.8" width="56" height="5.5"/>
   </g>
 </svg>

@@ -131,11 +131,14 @@ const SYNTHWAVE_SUN_ICON = `
     </defs>
     <circle cx="16" cy="16" r="15" fill="#6d3d73"/>
     <circle cx="16" cy="16" r="11" fill="url(#synthwave-sun-gradient)"/>
+    <!-- Three slats, not four: the disc is 22 units across but renders at 19px,
+         so a fourth put every band under a pixel and they mushed together. The
+         last one runs past the bottom of the disc on purpose — ending it short
+         left a 0.3-unit crescent hanging below it. -->
     <g fill="#6d3d73" clip-path="url(#synthwave-sun-clip)">
-      <rect x="3" y="16.9" width="26" height="1"/>
-      <rect x="3" y="19.3" width="26" height="1.3"/>
-      <rect x="3" y="21.9" width="26" height="1.6"/>
-      <rect x="3" y="24.8" width="26" height="1.9"/>
+      <rect x="3" y="17.1" width="26" height="1.9"/>
+      <rect x="3" y="21" width="26" height="2.1"/>
+      <rect x="3" y="24.8" width="26" height="3"/>
     </g>
   </svg>`;
 
