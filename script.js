@@ -109,6 +109,30 @@ document.querySelectorAll('.unit-toggle-btn').forEach((btn) => {
   });
 });
 
+// Drawn rather than picked from the emoji set: no emoji has the slatted outrun
+// sun (🌇 and 🌅 are the nearest and neither is close). Its colours are fixed
+// rather than tokenised on purpose — it always depicts Synthwave, so it stays
+// the same picture whichever theme is currently on, and doubles as a preview of
+// the palette the button switches into.
+const SYNTHWAVE_SUN_ICON = `
+  <svg viewBox="0 0 32 32" width="19" height="19" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="synthwave-sun-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffd152"/>
+        <stop offset="42%" stop-color="#ff9838"/>
+        <stop offset="100%" stop-color="#ff3f72"/>
+      </linearGradient>
+    </defs>
+    <circle cx="16" cy="16" r="15" fill="#6d3d73"/>
+    <circle cx="16" cy="16" r="11" fill="url(#synthwave-sun-gradient)"/>
+    <g fill="#6d3d73">
+      <rect x="3" y="16.9" width="26" height="1"/>
+      <rect x="3" y="19.3" width="26" height="1.3"/>
+      <rect x="3" y="21.9" width="26" height="1.6"/>
+      <rect x="3" y="24.8" width="26" height="1.9"/>
+    </g>
+  </svg>`;
+
 function applyThemeToggleUI() {
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.querySelector('.theme-toggle-btn');
@@ -117,9 +141,10 @@ function applyThemeToggleUI() {
   btn.setAttribute('aria-pressed', String(isSynthwave));
   btn.title = isSynthwave ? 'Switch to classic theme' : 'Switch to synthwave theme';
   // The icon shows where the button takes you, not where you already are, so it
-  // reads the same way round as the tooltip beside it: night city to go into
-  // Synthwave, daylight to come back out.
-  btn.textContent = isSynthwave ? '🌤️' : '🌇';
+  // reads the same way round as the tooltip beside it: the outrun sun to go into
+  // Synthwave, daylight to come back out. Both values are literals in this file,
+  // so innerHTML carries no untrusted input.
+  btn.innerHTML = isSynthwave ? '🌤️' : SYNTHWAVE_SUN_ICON;
 }
 
 // Deliberately does NOT re-render, unlike the unit toggle above. Units change the data; the
@@ -133,9 +158,21 @@ document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
     applyThemeToggleUI();
     // The classic theme hides the radio entirely, and hiding a deck that is
     // still playing would leave audio running with no way to reach the stop
-    // button. Safe to call from here: this only ever runs on a real click, long
-    // after the radio section at the foot of the file has initialised.
-    if (theme === 'classic') disconnectRadio();
+    // button. Entering Synthwave starts it back up, so the mode arrives with
+    // its music.
+    //
+    // Starting audio only works here because this runs inside a real click, and
+    // that gesture is what lets a browser allow playback at all. The same call
+    // on page load would simply be refused, which is why entering the mode
+    // starts the radio but loading the page already in it does not.
+    //
+    // Safe to call from here either way: a click only happens long after the
+    // radio section at the foot of the file has initialised.
+    if (theme === 'classic') {
+      disconnectRadio();
+    } else {
+      connectRadio();
+    }
   });
 });
 

@@ -784,6 +784,9 @@ h1 {
    group would overflow the card. */
 .theme-toggle-btn {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   padding: 0;
