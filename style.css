@@ -2086,9 +2086,13 @@ html[data-theme="classic"] .player-outer {
   display: none;
 }
 
+/* Capped at the panel's own width rather than the layout's, so body's
+   align-items: center centres the deck itself. Left at 1064px the panel sat
+   against the left edge of a much wider box, and drifted away from the weather
+   card as the window resized and the card re-centred. */
 .player-outer {
   width: 90%;
-  max-width: 1064px;
+  max-width: 440px;
   display: flex;
 }
 
