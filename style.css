@@ -2114,6 +2114,26 @@ html[data-theme="classic"] .player-outer {
   min-width: 0;
 }
 
+.player-eyebrow {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The station name carries the credit link now that the attribution line under
+   the panel is gone. Styled to read as part of the heading rather than as a
+   link, since the whole heading is the station. */
+.player-panel h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.player-panel h3 a:hover {
+  text-decoration: underline;
+}
+
 .player-panel h3 {
   margin: 0 0 2px;
   font-size: 0.95rem;
@@ -2207,16 +2227,6 @@ html[data-theme="classic"] .player-outer {
   margin: 8px 0 0;
   font-size: 0.75rem;
   color: var(--text-secondary);
-}
-
-.player-attribution {
-  margin: 6px 0 0;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-}
-
-.player-attribution a {
-  color: inherit;
 }
 
 /* Below this the row cannot hold the transport, the title and the controls
