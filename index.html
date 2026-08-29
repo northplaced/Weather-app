@@ -4,9 +4,75 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weather App</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- YouTube's embedded player refuses to start ("Error 153") if the page
+       reaches it without a usable Referer. This is the browser default, but
+       stating it stops a stricter default elsewhere from breaking playback. -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
+  <!-- Applies the saved theme before first paint. script.js runs at the end of
+       <body>, which is too late: the page would paint in the default theme and
+       then visibly snap to the saved one. localStorage access throws outright
+       in some privacy modes, hence the try/catch. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('weatherapp-theme');
+        if (t === 'classic' || t === 'synthwave') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (e) { /* storage unavailable; fall through to the default theme */ }
+    })();
+  </script>
 </head>
 <body>
+
+  <!-- Plain <audio> against a radio stream, deliberately not an embedded
+       player. Every iframe embed (YouTube, Spotify, SoundCloud) needs a real
+       origin and a Referer, so none of them will play on a page opened straight
+       from disk. Audio playback needs neither, so this behaves identically from
+       file:///C:/... and from a hosted https:// origin. -->
+  <div class="player-outer">
+    <section class="player-panel">
+      <div class="player-main">
+        <button type="button" class="player-launch" id="player-toggle">
+          <span class="player-launch-icon" aria-hidden="true">&#9654;</span>
+          <span id="player-toggle-label">Play</span>
+        </button>
+
+        <div class="player-side">
+          <p class="player-eyebrow">Streaming from</p>
+          <h3><a href="https://nightride.fm/" target="_blank" rel="noopener">Nightride FM</a></h3>
+          <!-- The label stays put and only the title scrolls, so the two never
+               slide apart. The viewport is what the title is measured against
+               to decide whether it needs to move at all. -->
+          <p class="player-nowplaying" id="player-nowplaying" hidden>
+            <span class="player-nowplaying-label">Now Playing:</span>
+            <span class="player-nowplaying-viewport" id="player-nowplaying-viewport">
+              <span id="player-nowplaying-track"></span>
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="player-controls">
+        <label class="player-volume-wrap">
+          <span class="player-control-label" for="player-volume">Vol</span>
+          <input type="range" id="player-volume" min="0" max="100" step="1" value="33"
+                 aria-label="Music volume">
+        </label>
+        <label class="player-volume-wrap">
+          <span class="player-control-label" for="player-channel">Channel</span>
+          <select id="player-channel" aria-label="Radio channel"></select>
+        </label>
+      </div>
+
+      <p class="player-note" id="player-note"></p>
+    </section>
+  </div>
 
   <div class="app-layout">
     <main class="card">
@@ -16,6 +82,8 @@
           <button type="button" class="unit-toggle-btn" data-unit="si">&deg;C</button>
           <button type="button" class="unit-toggle-btn" data-unit="imperial">&deg;F</button>
         </div>
+        <button type="button" class="theme-toggle-btn" aria-pressed="true"
+                aria-label="Toggle theme" title="Switch to classic theme">🌤️</button>
       </div>
 
       <form id="search-form" autocomplete="off">

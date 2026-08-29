@@ -16,6 +16,13 @@ const DEBOUNCE_DELAY = 350;
 const UNITS_STORAGE_KEY = 'weatherapp-units';
 let unitSystem = localStorage.getItem(UNITS_STORAGE_KEY) === 'imperial' ? 'imperial' : 'si';
 
+// Theme is applied to <html> as a data-theme attribute; style.css defines a complete token set
+// per theme. Synthwave is the default and needs no attribute, so only 'classic' has to persist.
+// index.html reads this same key in an inline <head> script to set the attribute before first
+// paint — without that, the page paints in the default theme and then snaps to the saved one.
+const THEME_STORAGE_KEY = 'weatherapp-theme';
+let theme = localStorage.getItem(THEME_STORAGE_KEY) === 'classic' ? 'classic' : 'synthwave';
+
 // Cached inputs from the last successful render, so toggling units can re-render from the
 // already-fetched data instead of re-fetching from the API.
 let lastLocation = null;
@@ -99,6 +106,82 @@ document.querySelectorAll('.unit-toggle-btn').forEach((btn) => {
     localStorage.setItem(UNITS_STORAGE_KEY, unitSystem);
     applyUnitToggleUI();
     if (lastForecast) renderWeather(lastLocation, lastForecast, lastAirQuality);
+  });
+});
+
+// Drawn rather than picked from the emoji set: no emoji has the slatted outrun
+// sun (🌇 and 🌅 are the nearest and neither is close). Its colours are fixed
+// rather than tokenised on purpose — it always depicts Synthwave, so it stays
+// the same picture whichever theme is currently on, and doubles as a preview of
+// the palette the button switches into.
+const SYNTHWAVE_SUN_ICON = `
+  <svg viewBox="0 0 32 32" width="19" height="19" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="synthwave-sun-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffd152"/>
+        <stop offset="42%" stop-color="#ff9838"/>
+        <stop offset="100%" stop-color="#ff3f72"/>
+      </linearGradient>
+      <!-- The slats are full-width bars, but the disc narrows towards the
+           bottom, so without this they overshoot its edge and stick out as
+           tabs. Clipping to the disc lets each bar end exactly on the curve. -->
+      <clipPath id="synthwave-sun-clip">
+        <circle cx="16" cy="16" r="11"/>
+      </clipPath>
+    </defs>
+    <circle cx="16" cy="16" r="15" fill="#6d3d73"/>
+    <circle cx="16" cy="16" r="11" fill="url(#synthwave-sun-gradient)"/>
+    <!-- Three slats, not four: the disc is 22 units across but renders at 19px,
+         so a fourth put every band under a pixel and they mushed together. The
+         last one runs past the bottom of the disc on purpose — ending it short
+         left a 0.3-unit crescent hanging below it. -->
+    <g fill="#6d3d73" clip-path="url(#synthwave-sun-clip)">
+      <rect x="3" y="17.1" width="26" height="1.9"/>
+      <rect x="3" y="21" width="26" height="2.1"/>
+      <rect x="3" y="24.8" width="26" height="3"/>
+    </g>
+  </svg>`;
+
+function applyThemeToggleUI() {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.querySelector('.theme-toggle-btn');
+  if (!btn) return;
+  const isSynthwave = theme === 'synthwave';
+  btn.setAttribute('aria-pressed', String(isSynthwave));
+  btn.title = isSynthwave ? 'Switch to classic theme' : 'Switch to synthwave theme';
+  // The icon shows where the button takes you, not where you already are, so it
+  // reads the same way round as the tooltip beside it: the outrun sun to go into
+  // Synthwave, daylight to come back out. Both values are literals in this file,
+  // so innerHTML carries no untrusted input.
+  btn.innerHTML = isSynthwave ? '🌤️' : SYNTHWAVE_SUN_ICON;
+}
+
+// Deliberately does NOT re-render, unlike the unit toggle above. Units change the data; the
+// theme only changes paint, and every colour — including the ones set inline below as var()
+// references — re-resolves the moment the attribute flips. Re-rendering would throw away the
+// hourly strip's scroll position and replace the live clock's node for no reason.
+document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    theme = theme === 'synthwave' ? 'classic' : 'synthwave';
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    applyThemeToggleUI();
+    // The classic theme hides the radio entirely, and hiding a deck that is
+    // still playing would leave audio running with no way to reach the stop
+    // button. Entering Synthwave starts it back up, so the mode arrives with
+    // its music.
+    //
+    // Starting audio only works here because this runs inside a real click, and
+    // that gesture is what lets a browser allow playback at all. The same call
+    // on page load would simply be refused, which is why entering the mode
+    // starts the radio but loading the page already in it does not.
+    //
+    // Safe to call from here either way: a click only happens long after the
+    // radio section at the foot of the file has initialised.
+    if (theme === 'classic') {
+      disconnectRadio();
+    } else {
+      connectRadio();
+    }
   });
 });
 
@@ -490,16 +573,16 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
   const pressureTrendChange =
     pressureTrendHours > 0 ? current.surface_pressure - hourly.surface_pressure[nowIndex - pressureTrendHours] : null;
   let pressureTrendLabel = 'Trend unavailable yet';
-  let pressureTrendColor = '#6b4e34';
+  let pressureTrendColor = 'var(--text-secondary)';
   if (pressureTrendChange != null) {
     const sign = pressureTrendChange > 0 ? '+' : '';
     const detail = `<span class="pressure-trend-detail">(${sign}${pressureTrendChange.toFixed(1)} hPa/${pressureTrendHours}h)</span>`;
     if (pressureTrendChange > 1) {
       pressureTrendLabel = `↑ Rising ${detail}`;
-      pressureTrendColor = '#4caf50';
+      pressureTrendColor = 'var(--scale-good)';
     } else if (pressureTrendChange < -1) {
       pressureTrendLabel = `↓ Falling ${detail}`;
-      pressureTrendColor = '#f44336';
+      pressureTrendColor = 'var(--scale-high)';
     } else {
       pressureTrendLabel = `→ Steady ${detail}`;
     }
@@ -507,7 +590,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
 
   return `
     <div class="detail-card">
-      <div class="label">💨 Wind <span class="wind-dir-arrow" style="transform: rotate(${current.wind_direction_10m}deg)">↑</span> ${windDir}</div>
+      <div class="label">💨 Wind <span class="wind-dir-arrow" style="transform: rotate(${Math.round(current.wind_direction_10m)}deg)">↑</span> ${windDir}</div>
       <div class="wind-bar-wrap">
         <div class="wind-bar">
           <span class="wind-segment wind-segment-blue"></span>
@@ -829,16 +912,16 @@ function applyDayLengthTrend(el, diffSeconds) {
   if (absSeconds < 10) {
     arrow = '→';
     word = 'Steady';
-    color = '#6b4e34';
+    color = 'var(--text-secondary)';
   } else if (diffSeconds > 0) {
     arrow = '↑';
     word = 'Longer';
-    color = '#6f9c5f';
+    color = 'var(--daylength-longer)';
     bracket = ` (+${minutes}m ${seconds}s)`;
   } else {
     arrow = '↓';
     word = 'Shorter';
-    color = '#b3574a';
+    color = 'var(--daylength-shorter)';
     bracket = ` (-${minutes}m ${seconds}s)`;
   }
 
@@ -1394,10 +1477,10 @@ const POLLEN_SPECIES = [
 ];
 
 function getPollenCategory(value, seasonStart, peak) {
-  if (value <= 0) return { label: 'None', color: '#9c8267' };
-  if (value < seasonStart) return { label: 'Present', color: '#4a90d9' };
-  if (value < peak) return { label: 'Elevated', color: '#ff9800' };
-  return { label: 'Peak', color: '#f44336' };
+  if (value <= 0) return { label: 'None', color: 'var(--text-muted)' };
+  if (value < seasonStart) return { label: 'Present', color: 'var(--precip)' };
+  if (value < peak) return { label: 'Elevated', color: 'var(--scale-elevated)' };
+  return { label: 'Peak', color: 'var(--scale-high)' };
 }
 
 function buildPollenForecast(air) {
@@ -1993,7 +2076,268 @@ radarMapEl.addEventListener('touchend', endRadarTouch);
 radarMapEl.addEventListener('touchcancel', cancelRadarTouch);
 
 // Show a default city as soon as the page loads.
+applyThemeToggleUI();
 applyUnitToggleUI();
 cityInput.value = 'Tampere';
 updateClearButtonVisibility();
 searchCity('Tampere');
+// ---------------------------------------------------------------------------
+// Synthwave radio
+//
+// A plain <audio> element pointed at Nightride FM, deliberately not an embedded
+// player. That choice is the whole point of this section: every iframe embed
+// (YouTube, Spotify, SoundCloud) requires a real origin and a Referer, so none
+// of them will start on a page opened straight from disk — YouTube answers with
+// "Error 153" and no amount of configuration changes it. Audio playback needs
+// neither, so this behaves identically from file:///C:/... and from a hosted
+// https:// origin.
+//
+// Browsers still refuse to start audio without a user gesture, so playback
+// always begins from the Play button; nothing autoplays on load.
+// ---------------------------------------------------------------------------
+
+// The ids double as the stream filename and as the "station" field in the
+// metadata feed, so they have to stay exactly as the station spells them.
+const RADIO_CHANNELS = [
+  { id: 'nightride', name: 'Synthwave FM' },
+  { id: 'chillsynth', name: 'Chillsynth FM' },
+  { id: 'datawave', name: 'Datawave FM' },
+  { id: 'spacesynth', name: 'Spacesynth FM' },
+  { id: 'darksynth', name: 'Darksynth FM' },
+  { id: 'horrorsynth', name: 'Horrorsynth FM' },
+];
+
+// Server-sent events, one JSON array per message, carrying the current track for
+// every station at once — so this is filtered down to the channel being played.
+const RADIO_META_URL = 'https://nightride.fm/meta';
+
+const VOLUME_STORAGE_KEY = 'weatherapp-volume';
+const CHANNEL_STORAGE_KEY = 'weatherapp-radio-channel';
+
+// What a first-time listener gets. Kept as named constants rather than the
+// first channel in the list, so the picker's running order stays free to change
+// without silently moving the default. The volume default is mirrored by the
+// input's value attribute in index.html.
+const DEFAULT_VOLUME = 33;
+const DEFAULT_CHANNEL = 'nightride';
+
+const playerToggle = document.getElementById('player-toggle');
+const playerToggleLabel = document.getElementById('player-toggle-label');
+const playerToggleIcon = playerToggle.querySelector('.player-launch-icon');
+const playerVolume = document.getElementById('player-volume');
+const playerChannel = document.getElementById('player-channel');
+const playerNowPlaying = document.getElementById('player-nowplaying');
+const playerNowPlayingViewport = document.getElementById('player-nowplaying-viewport');
+const playerNowPlayingTrack = document.getElementById('player-nowplaying-track');
+const playerNote = document.getElementById('player-note');
+
+const radio = new Audio();
+radio.preload = 'none';
+
+let radioMeta = null;
+let radioMetaReceived = false;
+
+// Scrolls the title only when it genuinely does not fit, and only as far as it
+// actually overhangs. Both the distance and the duration come from the measured
+// overflow, so a slightly-too-long title creeps and a very long one takes
+// proportionally longer instead of racing past at the same speed.
+function updateNowPlayingMarquee() {
+  playerNowPlayingTrack.classList.remove('is-scrolling');
+  playerNowPlayingTrack.style.removeProperty('--marquee-shift');
+  playerNowPlayingTrack.style.removeProperty('--marquee-duration');
+
+  if (playerNowPlaying.hidden) return;
+
+  // Measured with the class removed above, so this reads the resting width
+  // rather than whatever offset a running animation had reached.
+  const overflow = playerNowPlayingTrack.scrollWidth - playerNowPlayingViewport.clientWidth;
+  if (overflow <= 1) return;
+
+  playerNowPlayingTrack.style.setProperty('--marquee-shift', `${-overflow}px`);
+  playerNowPlayingTrack.style.setProperty('--marquee-duration', `${Math.max(5, overflow / 16)}s`);
+  playerNowPlayingTrack.classList.add('is-scrolling');
+}
+
+function setNowPlaying(text) {
+  // textContent, never innerHTML: these strings come off a third-party feed.
+  playerNowPlayingTrack.textContent = text || '';
+  playerNowPlaying.hidden = !text;
+  updateNowPlayingMarquee();
+}
+
+// Whether a title overflows depends on the panel's width, so this has to be
+// reconsidered when the window changes, not just when the track does.
+let nowPlayingResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(nowPlayingResizeTimer);
+  nowPlayingResizeTimer = setTimeout(updateNowPlayingMarquee, 150);
+});
+
+function stopMeta() {
+  if (radioMeta) {
+    radioMeta.close();
+    radioMeta = null;
+  }
+  radioMetaReceived = false;
+  setNowPlaying('');
+}
+
+// One feed carries every station, and reconnecting replays the current track for
+// all of them straight away — which is why a channel change reopens the stream
+// rather than just changing the filter. Waiting for the next track to roll round
+// would leave the line blank for minutes.
+function startMeta() {
+  stopMeta();
+
+  const channel = storedChannel();
+  let source;
+  try {
+    source = new EventSource(RADIO_META_URL);
+  } catch (error) {
+    return; // no metadata; the line simply stays hidden
+  }
+  radioMeta = source;
+
+  source.onmessage = (event) => {
+    let rows;
+    try {
+      rows = JSON.parse(event.data);
+    } catch (error) {
+      return;
+    }
+    if (!Array.isArray(rows)) return;
+
+    const match = rows.find((row) => row && row.station === channel);
+    if (!match) return;
+
+    radioMetaReceived = true;
+    const title = (match.title || '').trim();
+    const artist = (match.artist || '').trim();
+    if (!title && !artist) return;
+    setNowPlaying(artist && title ? `${title} — ${artist}` : title || artist);
+  };
+
+  source.onerror = () => {
+    // EventSource retries on its own, which is what a dropped connection wants.
+    // But if nothing ever arrived the feed is unreachable for this page — most
+    // likely opened from disk, where the cross-origin request is refused — so
+    // stop retrying and leave the line hidden rather than looping forever.
+    if (!radioMetaReceived) stopMeta();
+  };
+}
+
+// Null has to be rejected before the range check, not by it: Number(null) is 0,
+// which is a perfectly valid volume, so a first-time listener with nothing saved
+// yet would otherwise get a silent player and no clue why.
+function storedVolume() {
+  const raw = localStorage.getItem(VOLUME_STORAGE_KEY);
+  if (raw === null) return DEFAULT_VOLUME;
+  const level = Number(raw);
+  return Number.isFinite(level) && level >= 0 && level <= 100 ? level : DEFAULT_VOLUME;
+}
+
+function storedChannel() {
+  const saved = localStorage.getItem(CHANNEL_STORAGE_KEY);
+  return RADIO_CHANNELS.some((channel) => channel.id === saved) ? saved : DEFAULT_CHANNEL;
+}
+
+function setPlayerNote(message) {
+  playerNote.textContent = message || '';
+  playerNote.style.display = message ? 'block' : 'none';
+}
+
+function setToggleState(state) {
+  const labels = { playing: 'Pause', connecting: 'Connecting', idle: 'Play' };
+  playerToggleIcon.innerHTML = state === 'playing' ? '&#10074;&#10074;' : '&#9654;';
+  playerToggleLabel.textContent = labels[state];
+  playerToggle.setAttribute('aria-pressed', String(state !== 'idle'));
+}
+
+// A live stream has no meaningful paused position: leaving the connection open
+// would just buffer air. Stopping releases it, and playing again reconnects to
+// whatever is going out now, which is what "live" should mean.
+function disconnectRadio() {
+  radio.pause();
+  radio.removeAttribute('src');
+  radio.load();
+  stopMeta();
+  setToggleState('idle');
+}
+
+function connectRadio() {
+  const channel = storedChannel();
+  radio.src = `https://stream.nightride.fm/${channel}.mp3`;
+  radio.volume = storedVolume() / 100;
+  setToggleState('connecting');
+  setPlayerNote('');
+  startMeta();
+
+  const attempt = radio.play();
+  if (attempt && typeof attempt.catch === 'function') {
+    attempt.catch(() => {
+      // Either the browser declined to start the audio, or the stream could not
+      // be reached. The error event handler covers the second case with a better
+      // message, so only fall back to a generic one if it stays silent.
+      if (radio.paused) {
+        setToggleState('idle');
+        setPlayerNote('Could not start playback. Check the connection, or open the station directly.');
+      }
+    });
+  }
+}
+
+RADIO_CHANNELS.forEach((channel) => {
+  const option = document.createElement('option');
+  option.value = channel.id;
+  option.textContent = channel.name;
+  playerChannel.appendChild(option);
+});
+
+// The picker is the only place the channel is named now, so there is nothing
+// else to keep in step with it.
+function syncChannelSelect() {
+  playerChannel.value = storedChannel();
+}
+
+playerToggle.addEventListener('click', () => {
+  if (radio.paused) {
+    connectRadio();
+  } else {
+    disconnectRadio();
+  }
+});
+
+playerVolume.addEventListener('input', () => {
+  const level = Number(playerVolume.value);
+  localStorage.setItem(VOLUME_STORAGE_KEY, String(level));
+  radio.volume = level / 100;
+});
+
+playerChannel.addEventListener('change', () => {
+  localStorage.setItem(CHANNEL_STORAGE_KEY, playerChannel.value);
+  syncChannelSelect();
+  // Switching channel mid-listen should keep playing, just from the new stream.
+  if (!radio.paused) connectRadio();
+});
+
+radio.addEventListener('playing', () => {
+  setToggleState('playing');
+  setPlayerNote('');
+});
+
+radio.addEventListener('waiting', () => {
+  if (!radio.paused) setToggleState('connecting');
+});
+
+radio.addEventListener('error', () => {
+  // Fires on teardown too, when the src has deliberately been removed.
+  if (!radio.getAttribute('src')) return;
+  disconnectRadio();
+  setPlayerNote('Could not reach the stream. The station link below always works.');
+});
+
+playerVolume.value = String(storedVolume());
+radio.volume = storedVolume() / 100;
+syncChannelSelect();
+setToggleState('idle');
+setPlayerNote('');

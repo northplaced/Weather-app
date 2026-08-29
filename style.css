@@ -1,3 +1,260 @@
+/* ==========================================================================
+   Theme tokens
+
+   Every colour, shadow, filter, font and animation in this file resolves
+   through one of these. Nothing below these blocks contains a raw colour
+   literal -- if you find yourself typing a hex value further down, it wants
+   to be a token instead, defined in BOTH blocks.
+
+   :root is Synthwave, the default -- it applies when no data-theme attribute
+   is set. html[data-theme="classic"] is the original warm brown scheme.
+
+   Both blocks define the complete set and neither inherits from the other, so
+   a token added to one can't silently fall back to the other theme's value.
+   The two are kept in sync by hand; they should always have identical key
+   lists. script.js flips the attribute on <html> and everything re-resolves,
+   including the colours it sets inline as var() references.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Typography */
+  --font-display: 'Orbitron', 'Rajdhani', Arial, Helvetica, sans-serif;
+  --font-body: 'Rajdhani', Arial, Helvetica, sans-serif;
+  --display-tracking: 0.06em;
+  --temp-size: 3.05rem;
+
+  /* Backdrop. The hard 59.9%/60% stop in the gradient IS the horizon line, so
+     it needs no element of its own; the grid and sun are drawn as fixed
+     pseudo-elements that hang off it. */
+  --bg-base: #0b0120;
+  --bg-gradient:
+    radial-gradient(140% 46% at 50% 60%, rgba(255, 45, 149, 0.38), transparent 72%),
+    linear-gradient(180deg,
+      #0b0120 0%, #17053a 24%, #350c58 44%,
+      #6b1560 58%, #a81e6d 59.9%,
+      #0d0126 60%, #10012b 100%);
+  --bg-attachment: fixed;
+  --backdrop-display: block;
+  --grid-line: rgba(0, 245, 255, 0.55);
+  --grid-line-alt: rgba(255, 45, 149, 0.3);
+  --grid-anim: grid-scroll 2.6s linear infinite;
+  --sun-top: #fff3b0;
+  --sun-mid: #ff9d3c;
+  --sun-bottom: #ff2e88;
+  --sun-halo: rgba(255, 46, 136, 0.4);
+
+  /* Scanlines */
+  --scanline-color: rgba(0, 245, 255, 0.05);
+  --scanline-anim: scanline-drift 9s linear infinite;
+
+  /* Surfaces, borders, shadows. The neon card outline is the 0 0 0 1px spread
+     ring inside --shadow-card, NOT a real border -- a border would add 2px to
+     every panel and shift the layout away from the classic theme. */
+  /* 0.88 rather than a more translucent 0.78: panels scroll over the sun disc,
+     and at 0.78 the muted tier lands at 4.3:1 against that brighter composite,
+     just under AA -- and muted carries most of the 0.5-0.7rem text. */
+  --surface-card: rgba(28, 7, 56, 0.88);
+  --card-backdrop-filter: blur(10px) saturate(1.25);
+  --surface-raised: rgba(11, 2, 30, 0.88);
+  --surface-sunken: rgba(255, 45, 149, 0.1);
+  --surface-hover: rgba(0, 245, 255, 0.14);
+  --surface-hover-accent: rgba(255, 45, 149, 0.2);
+  --surface-accent-wash: rgba(0, 245, 255, 0.18);
+  --border-subtle: rgba(0, 245, 255, 0.36);
+  --border-hairline: rgba(255, 45, 149, 0.22);
+  --shadow-card:
+    0 0 0 1px rgba(255, 45, 149, 0.45),
+    0 0 24px rgba(255, 45, 149, 0.28),
+    0 18px 50px rgba(4, 0, 18, 0.75);
+  --shadow-dropdown:
+    0 0 0 1px rgba(0, 245, 255, 0.38),
+    0 0 22px rgba(0, 245, 255, 0.2),
+    0 16px 40px rgba(4, 0, 18, 0.82);
+
+  /* Text tiers. Measured contrast against the composited card, over the sky
+     (#1b0738) and in the worst case over the sun disc:
+       primary 16.1 / 13.4    body      12.5 / 10.4
+       secondary 8.9 / 7.4    muted      6.4 / 5.3
+     The app has a lot of 0.5-0.7rem text, so muted is the tier that matters;
+     keep it above 4.5:1 in the sun column if these values are ever changed. */
+  --text-primary: #f4ecff;
+  --text-secondary: #bcaaee;
+  --text-muted: #9d8fd0;
+  --text-body: #d9cff5;
+  --text-on-accent: #150031;
+  --text-on-accent-strong: #150031;
+
+  /* Accent */
+  --accent: #ff2d95;
+  --accent-hover: #ff5fae;
+  --accent-focus: #00f5ff;
+  --temp-accent: #5ef7ff;
+
+  /* Glow and motion */
+  --glow-heading: 0 0 6px rgba(255, 45, 149, 0.75), 0 0 18px rgba(255, 45, 149, 0.35);
+  --glow-accent: 0 0 10px rgba(255, 45, 149, 0.55), 0 0 24px rgba(255, 45, 149, 0.3);
+  --glow-temp: 0 0 10px rgba(0, 240, 255, 0.75), 0 0 30px rgba(0, 240, 255, 0.35);
+  --glow-value: 0 0 6px rgba(0, 240, 255, 0.3);
+  --temp-anim: temp-pulse 3.4s ease-in-out infinite;
+  --focus-ring: 0 0 0 2px var(--accent-focus), 0 0 14px rgba(0, 245, 255, 0.35);
+
+  /* Ordered data scale. Hue rotates cool -> extreme exactly as the classic
+     scale does, AND relative lightness falls monotonically from --scale-moderate
+     down, so the ordering still reads if hue is unavailable. --scale-extreme is
+     deliberately dark rather than bright: it means "off the scale". */
+  --scale-cool: #22d3ff;
+  --scale-good: #39ff9e;
+  --scale-moderate: #ffe95c;
+  --scale-elevated: #ff9f2e;
+  --scale-high: #ff3b6b;
+  --scale-severe: #c14bff;
+  --scale-extreme: #8e0b3a;
+
+  /* Domain colours. --precip stays bluer than --scale-cool so precipitation
+     text never reads as an air-quality value. */
+  --precip: #4d9dff;
+  --snow-fill: #b8c9ff;
+  --snow-text: #9db4e8;
+  --sun-track: #ffb347;
+  --sun-marker: #ffd166;
+  --sun-glow: rgba(255, 180, 60, 0.3);
+  --moon-track: #8fb8ff;
+  --moon-marker: #cfe3ff;
+  --moon-glow: rgba(143, 184, 255, 0.25);
+  --arc-baseline: rgba(0, 245, 255, 0.26);
+  --arc-remaining: rgba(0, 245, 255, 0.3);
+  --arc-marker-stroke: #180634;
+  --arc-filter: drop-shadow(0 0 3px rgba(0, 245, 255, 0.35));
+  --icon-filter: saturate(1.15) drop-shadow(0 0 8px rgba(0, 245, 255, 0.22));
+
+  /* Trend indicators (also referenced from script.js) */
+  --daylength-longer: #39ff9e;
+  --daylength-shorter: #ff6b8a;
+
+  /* Radar panel chrome */
+  --radar-map-bg: #0b1020;
+  --radar-base-filter: invert(1) hue-rotate(185deg) saturate(0.65) brightness(0.82) contrast(1.12);
+  --radar-marker: #ff2d95;
+  --radar-marker-ring: rgba(255, 255, 255, 0.92);
+  --radar-marker-shadow: 0 0 9px rgba(255, 45, 149, 0.9);
+  --radar-btn-bg: rgba(20, 6, 45, 0.92);
+  --radar-btn-fg: #00f5ff;
+  --radar-btn-bg-hover: rgba(48, 13, 86, 0.96);
+  --radar-btn-shadow: 0 0 0 1px rgba(0, 245, 255, 0.5), 0 0 10px rgba(0, 245, 255, 0.32);
+
+  /* Misc */
+  --scrollbar-color: var(--accent) transparent;
+}
+
+html[data-theme="classic"] {
+  color-scheme: light;
+
+  /* Typography */
+  --font-display: Arial, Helvetica, sans-serif;
+  --font-body: Arial, Helvetica, sans-serif;
+  --display-tracking: normal;
+  --temp-size: 3.5rem;
+
+  /* Backdrop -- the page behind the panels */
+  --bg-base: transparent;
+  --bg-gradient: linear-gradient(135deg, #d9a066, #b3714a);
+  --bg-attachment: scroll;
+  --backdrop-display: none;
+  --grid-line: transparent;
+  --grid-line-alt: transparent;
+  --grid-anim: none;
+  --sun-top: transparent;
+  --sun-mid: transparent;
+  --sun-bottom: transparent;
+  --sun-halo: transparent;
+
+  /* Scanlines */
+  --scanline-color: transparent;
+  --scanline-anim: none;
+
+  /* Surfaces, borders, shadows */
+  --surface-card: #fdf3e7;
+  --card-backdrop-filter: none;
+  --surface-raised: #fffaf3;
+  --surface-sunken: rgba(179, 113, 74, 0.12);
+  --surface-hover: #f5e8d8;
+  --surface-hover-accent: rgba(179, 113, 74, 0.15);
+  --surface-accent-wash: rgba(179, 113, 74, 0.18);
+  --border-subtle: #d9c3ac;
+  --border-hairline: rgba(179, 113, 74, 0.15);
+  --shadow-card: 0 10px 25px rgba(60, 30, 10, 0.2);
+  --shadow-dropdown: 0 10px 25px rgba(60, 30, 10, 0.15);
+
+  /* Text tiers */
+  --text-primary: #4a3320;
+  --text-secondary: #6b4e34;
+  --text-muted: #9c8267;
+  --text-body: #5c4630;
+  --text-on-accent: #fffaf3;
+  --text-on-accent-strong: #fdf3e7;
+
+  /* Accent */
+  --accent: #b3714a;
+  --accent-hover: #9c5f3d;
+  --accent-focus: #b3714a;
+  --temp-accent: #9c5f3d;
+
+  /* Glow and motion */
+  --glow-heading: none;
+  --glow-accent: none;
+  --glow-temp: none;
+  --glow-value: none;
+  --temp-anim: none;
+  --focus-ring: none;
+
+  /* Ordered data scale -- shared by the UV, AQI, humidity, wind and pressure
+     bars. Must always read as an ordered progression, cool -> extreme. */
+  --scale-cool: #03a9f4;
+  --scale-good: #4caf50;
+  --scale-moderate: #ffeb3b;
+  --scale-elevated: #ff9800;
+  --scale-high: #f44336;
+  --scale-severe: #9c27b0;
+  --scale-extreme: #7b241c;
+
+  /* Domain colours -- precipitation, and the sun / moon arcs */
+  --precip: #4a90d9;
+  --snow-fill: #9fb3c8;
+  --snow-text: #6b7f91;
+  --sun-track: #d9a066;
+  --sun-marker: #f2a93b;
+  --sun-glow: rgba(242, 169, 59, 0.25);
+  --moon-track: #7c8ba1;
+  --moon-marker: #9aa8bd;
+  --moon-glow: rgba(124, 139, 161, 0.25);
+  --arc-baseline: rgba(107, 78, 52, 0.3);
+  --arc-remaining: rgba(107, 78, 52, 0.35);
+  --arc-marker-stroke: #fdf3e7;
+  --arc-filter: none;
+  --icon-filter: none;
+
+  /* Trend indicators (also referenced from script.js) */
+  --daylength-longer: #6f9c5f;
+  --daylength-shorter: #b3574a;
+
+  /* Radar panel chrome. The base map tiles are externally sourced imagery, so
+     they are re-toned with a filter rather than a colour. */
+  --radar-map-bg: #cfd8dc;
+  --radar-base-filter: none;
+  --radar-marker: #ff5722;
+  --radar-marker-ring: white;
+  --radar-marker-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  --radar-btn-bg: #ffffff;
+  --radar-btn-fg: #333;
+  --radar-btn-bg-hover: #f2f2f2;
+  --radar-btn-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+
+  /* Misc */
+  --scrollbar-color: auto;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10,9 +267,121 @@ body {
   align-items: center;
   justify-content: center;
   gap: 24px;
-  font-family: Arial, Helvetica, sans-serif;
-  background: linear-gradient(135deg, #d9a066, #b3714a);
+  font-family: var(--font-body);
+  background: var(--bg-gradient);
+  background-color: var(--bg-base);
+  background-attachment: var(--bg-attachment);
   padding: 24px 0;
+}
+
+/* --------------------------------------------------------------------------
+   Backdrop: perspective grid, horizon sun, scanlines.
+
+   All three are position: fixed, which is load-bearing twice over. It keeps
+   them out of body's flex flow (an in-flow pseudo-element would become a flex
+   item and eat a 24px gap slot, shifting the whole page down), and it pins
+   them to the viewport so they stay put while the page scrolls.
+
+   They sit on negative z-indexes. body sets no transform/filter/opacity, so it
+   creates no stacking context and these land in the root's negative layer:
+   above the propagated body background, below every panel. The existing
+   z-indexes in the app (.suggestions 30, .radar-zoom-controls 20, .marker 10)
+   all live inside .card / #radar-map subtrees and never interact with these.
+
+   Never give <html> a background. That would stop body's background
+   propagating to the canvas and invert this whole stack.
+   -------------------------------------------------------------------------- */
+
+html::before {
+  /* The grid floor. Hinged at its TOP edge and tipped away from the viewer, so
+     the top edge converges at the vanishing point on the horizon and the
+     bottom edge fills the foreground. Over-wide (left/right: -50%) so the
+     perspective foreshortening never exposes empty gutters at the sides. */
+  content: '';
+  position: fixed;
+  left: -50%;
+  right: -50%;
+  bottom: 0;
+  height: 62vh;
+  z-index: -3;
+  display: var(--backdrop-display);
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to right, var(--grid-line) 0 2px, transparent 2px 84px),
+    repeating-linear-gradient(to bottom, var(--grid-line-alt) 0 2px, transparent 2px 84px);
+  transform: perspective(300px) rotateX(63deg);
+  transform-origin: 50% 0%;
+  /* Fades out the far rows, where the horizontal lines converge to sub-pixel
+     spacing and would otherwise moire badly. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  animation: var(--grid-anim);
+  will-change: background-position;
+}
+
+body::before {
+  /* The setting sun. The slats widen towards the bottom, which needs a single
+     non-repeating gradient mask; a repeating one can only give even bands. */
+  content: '';
+  position: fixed;
+  left: 50%;
+  bottom: 40vh;
+  width: min(540px, 78vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, 42%);
+  z-index: -2;
+  display: var(--backdrop-display);
+  pointer-events: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--sun-top) 0%, var(--sun-mid) 48%, var(--sun-bottom) 100%);
+  box-shadow: 0 0 130px 45px var(--sun-halo);
+  -webkit-mask-image: linear-gradient(to bottom,
+    #000 0 54%, transparent 54% 57%, #000 57% 64%, transparent 64% 68%,
+    #000 68% 74%, transparent 74% 79%, #000 79% 84%, transparent 84% 90%,
+    #000 90% 94%, transparent 94% 100%);
+  mask-image: linear-gradient(to bottom,
+    #000 0 54%, transparent 54% 57%, #000 57% 64%, transparent 64% 68%,
+    #000 68% 74%, transparent 74% 79%, #000 79% 84%, transparent 84% 90%,
+    #000 90% 94%, transparent 94% 100%);
+}
+
+body::after {
+  /* CRT scanlines. Kept behind the panels (z-index -1) rather than over the
+     whole page; striping the radar imagery and the 0.5rem text costs more
+     legibility than it buys atmosphere. */
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: var(--backdrop-display);
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, var(--scanline-color) 0 1px, transparent 1px 3px);
+  animation: var(--scanline-anim);
+}
+
+@keyframes grid-scroll {
+  /* Only the horizontal lines advance. Animating the vertical layer too would
+     make the grid look like it is sliding sideways instead of towards you. */
+  to { background-position: 0 0, 0 84px; }
+}
+
+@keyframes scanline-drift {
+  to { background-position: 0 3px; }
+}
+
+@keyframes temp-pulse {
+  /* Glow only, never transform: scale. .temp-big shares a grid track with
+     .feels-like and .hi-lo, so a scaling temperature would collide with them.
+     0%/100% equals the resting glow, so a frozen animation looks correct. */
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.72), 0 0 30px rgba(0, 240, 255, 0.32);
+  }
+  50% {
+    text-shadow:
+      0 0 16px rgba(0, 240, 255, 0.95),
+      0 0 52px rgba(0, 240, 255, 0.55),
+      0 0 80px rgba(255, 45, 149, 0.28);
+  }
 }
 
 .app-layout {
@@ -25,29 +394,36 @@ body {
 }
 
 .card {
-  background: #fdf3e7;
+  background: var(--surface-card);
   border-radius: 12px;
   padding: 32px;
   width: 100%;
   max-width: 440px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
 .radar-panel {
-  background: #fdf3e7;
+  background: var(--surface-card);
   border-radius: 12px;
   padding: 24px;
   width: 100%;
   max-width: 600px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
 .radar-panel h3 {
   margin: 0 0 12px;
   font-size: 0.95rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .radar-timeline {
@@ -59,13 +435,13 @@ body {
   text-align: center;
   font-size: 0.85rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 #radar-time-slider {
   width: 100%;
-  accent-color: #b3714a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -78,7 +454,7 @@ body {
   display: flex;
   justify-content: space-between;
   font-size: 0.7rem;
-  color: #9c8267;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -91,7 +467,7 @@ body {
   margin: 0 auto;
   overflow: hidden;
   border-radius: 12px;
-  background: #cfd8dc;
+  background: var(--radar-map-bg);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -113,15 +489,19 @@ body {
   -webkit-user-drag: none;
 }
 
+#radar-map img.base-tile {
+  filter: var(--radar-base-filter);
+}
+
 #radar-map .marker {
   position: absolute;
   width: 14px;
   height: 14px;
-  background: #ff5722;
-  border: 2px solid white;
+  background: var(--radar-marker);
+  border: 2px solid var(--radar-marker-ring);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--radar-marker-shadow);
   pointer-events: none;
   z-index: 10;
 }
@@ -142,16 +522,16 @@ body {
   padding: 0;
   border: none;
   border-radius: 4px;
-  background: #ffffff;
-  color: #333;
+  background: var(--radar-btn-bg);
+  color: var(--radar-btn-fg);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--radar-btn-shadow);
 }
 
 .radar-zoom-controls button:hover {
-  background: #f2f2f2;
+  background: var(--radar-btn-bg-hover);
 }
 
 .radar-placeholder {
@@ -160,7 +540,7 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 80%;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 0;
@@ -169,14 +549,14 @@ body {
 
 .radar-caption {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   text-align: center;
   margin: 10px 0 0;
 }
 
 .radar-attribution {
   font-size: 0.7rem;
-  color: #9c8267;
+  color: var(--text-muted);
   text-align: center;
   margin: 4px 0 0;
 }
@@ -197,7 +577,7 @@ body {
 }
 
 .pollen-panel {
-  background: #fdf3e7;
+  background: var(--surface-card);
   border-radius: 12px;
   padding: 24px 32px;
   width: 100%;
@@ -205,17 +585,22 @@ body {
      both sit flush against the same left-aligned starting point (see .pollen-outer above). */
   max-width: 440px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.2);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
 .pollen-panel h3 {
   margin: 0 0 16px;
   font-size: 0.95rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .pollen-placeholder {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin: 8px 0;
 }
@@ -237,7 +622,7 @@ body {
 .pollen-value {
   font-size: 0.85rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-top: 8px;
 }
 
@@ -255,7 +640,7 @@ body {
   position: relative;
   width: 14px;
   height: 90px;
-  background: rgba(179, 113, 74, 0.12);
+  background: var(--surface-sunken);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -272,13 +657,13 @@ body {
   left: -3px;
   width: 20px;
   height: 2px;
-  background: #6b4e34;
+  background: var(--text-secondary);
 }
 
 .pollen-scale-peak {
   font-size: 0.5rem;
   font-weight: bold;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin-bottom: 2px;
 }
 
@@ -290,7 +675,7 @@ body {
   transform: translateY(50%);
   font-size: 0.5rem;
   font-weight: bold;
-  color: #6b4e34;
+  color: var(--text-secondary);
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
@@ -302,44 +687,44 @@ body {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pollen-active-window {
   margin-top: 8px;
   font-size: 0.55rem;
   line-height: 1.05;
-  color: #9c8267;
+  color: var(--text-muted);
 }
 
 .pollen-name {
   margin-top: 2px;
   font-size: 0.68rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .pollen-name-local {
   font-size: 0.55rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
 .pollen-summary {
   font-size: 0.85rem;
-  color: #4a3320;
+  color: var(--text-primary);
   margin: 8px 0 4px;
 }
 
 .pollen-note {
   font-size: 0.7rem;
-  color: #9c8267;
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
 .app-attribution {
   font-size: 0.6rem;
-  color: #9c8267;
+  color: var(--text-muted);
   text-align: center;
   margin: 20px 0 0;
 }
@@ -351,18 +736,31 @@ body {
 h1 {
   margin-top: 0;
   font-size: 1.5rem;
-  color: #4a3320;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* flex-end rather than space-between, which are equivalent on a single row
+     given the h1's margin-right: auto below, but differ once the row wraps:
+     space-between strands the wrapped control on the far left. */
+  justify-content: flex-end;
   gap: 12px;
+  /* Three controls now compete for this row. Without wrapping, the h1 is the
+     flex item that gives way and breaks "Weather App" across two lines on
+     narrow screens; wrapping keeps the title whole and drops the theme pill to
+     its own right-aligned row instead. Only happens below ~380px. */
+  flex-wrap: wrap;
 }
 
 .card-header h1 {
   text-align: left;
+  margin-right: auto;
+  white-space: nowrap;
 }
 
 .unit-toggle {
@@ -372,23 +770,47 @@ h1 {
 
 .unit-toggle-btn {
   padding: 4px 10px;
-  border: 1px solid #d9c3ac;
+  border: 1px solid var(--border-subtle);
   border-radius: 20px;
-  background: #fffaf3;
-  color: #6b4e34;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: bold;
   cursor: pointer;
 }
 
 .unit-toggle-btn:hover {
-  background: #f5e8d8;
+  background: var(--surface-hover);
 }
 
 .unit-toggle-btn.active {
-  background: #b3714a;
-  border-color: #b3714a;
-  color: #fffaf3;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--glow-accent);
+}
+
+/* A single pill rather than a segmented pair: the header already carries the
+   h1 and the unit toggle, and at the 430px breakpoint a second two-button
+   group would overflow the card. */
+.theme-toggle-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--surface-hover);
 }
 
 #search-form {
@@ -405,16 +827,17 @@ h1 {
 #city-input {
   width: 100%;
   padding: 10px 34px 10px 12px;
-  border: 1px solid #d9c3ac;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   font-size: 1rem;
-  background: #fffaf3;
-  color: #4a3320;
+  background: var(--surface-raised);
+  color: var(--text-primary);
 }
 
 #city-input:focus {
   outline: none;
-  border-color: #b3714a;
+  border-color: var(--accent-focus);
+  box-shadow: var(--focus-ring);
 }
 
 .clear-input-btn {
@@ -429,7 +852,7 @@ h1 {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #9c8267;
+  color: var(--text-muted);
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
@@ -438,8 +861,8 @@ h1 {
 }
 
 .clear-input-btn:hover {
-  background: rgba(179, 113, 74, 0.15);
-  color: #6b4e34;
+  background: var(--surface-hover-accent);
+  color: var(--text-secondary);
 }
 
 .suggestions {
@@ -452,10 +875,10 @@ h1 {
   margin: 0;
   padding: 6px;
   list-style: none;
-  background: #fffaf3;
-  border: 1px solid #d9c3ac;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(60, 30, 10, 0.15);
+  box-shadow: var(--shadow-dropdown);
   max-height: 280px;
   overflow-y: auto;
 }
@@ -468,7 +891,7 @@ h1 {
   padding: 8px 10px;
   border-radius: 8px;
   cursor: pointer;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .suggestion-item + .suggestion-item {
@@ -477,13 +900,13 @@ h1 {
 
 .suggestion-item:hover,
 .suggestion-item.highlighted {
-  background: #b3714a;
-  color: #fffaf3;
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
 
 .suggestion-item:hover .suggestion-subtitle,
 .suggestion-item.highlighted .suggestion-subtitle {
-  color: #fffaf3;
+  color: var(--text-on-accent);
 }
 
 .suggestion-name {
@@ -494,12 +917,12 @@ h1 {
 .suggestion-subtitle {
   display: block;
   font-size: 0.8rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .suggestion-empty {
   padding: 8px 10px;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -507,18 +930,26 @@ button {
   padding: 10px 16px;
   border: none;
   border-radius: 8px;
-  background: #b3714a;
-  color: #fdf3e7;
+  background: var(--accent);
+  color: var(--text-on-accent-strong);
   font-size: 1rem;
   cursor: pointer;
+  font-family: var(--font-body);
+}
+
+/* Scoped to the submit button rather than sitting on `button` above, which
+   also matches the unit toggle, the clear-input X and the theme pill; those
+   set their own backgrounds and would just pick up a stray halo. */
+#search-form button[type="submit"] {
+  box-shadow: var(--glow-accent);
 }
 
 button:hover {
-  background: #9c5f3d;
+  background: var(--accent-hover);
 }
 
 #result {
-  color: #5c4630;
+  color: var(--text-body);
   min-height: 40px;
 }
 
@@ -529,13 +960,16 @@ button:hover {
 #result h2 {
   margin: 4px 0;
   font-size: 1.1rem;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 #result h3 {
   font-size: 0.95rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin: 20px 0 8px;
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
 }
 
 .section-header {
@@ -551,7 +985,7 @@ button:hover {
 .local-time {
   font-size: 0.85rem;
   font-weight: bold;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 /* Current conditions */
@@ -564,7 +998,7 @@ button:hover {
   margin: 0;
   font-size: 0.75rem;
   font-weight: normal;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 /* Breaks out of .card's own 32px padding (negative side margins) so the 1fr spacer tracks
@@ -593,29 +1027,33 @@ button:hover {
 .current-icon {
   font-size: 3.5rem;
   line-height: 1;
+  filter: var(--icon-filter);
 }
 
 .condition {
   margin: 4px 0;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .current-precip {
   margin: 2px 0 0;
-  color: #4a90d9;
+  color: var(--precip);
 }
 
 .temp-big {
-  font-size: 3.5rem;
+  font-size: var(--temp-size);
   font-weight: bold;
   margin: 4px 0;
-  color: #9c5f3d;
+  color: var(--temp-accent);
+  font-family: var(--font-display);
+  text-shadow: var(--glow-temp);
+  animation: var(--temp-anim);
 }
 
 .feels-like,
 .hi-lo {
   margin: 2px 0;
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -635,7 +1073,7 @@ button:hover {
 }
 
 .hour-label {
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .hour-icon {
@@ -644,7 +1082,7 @@ button:hover {
 }
 
 .hour-precip {
-  color: #4a90d9;
+  color: var(--precip);
   min-height: 1em;
   position: relative;
   left: 2px;
@@ -652,7 +1090,7 @@ button:hover {
 
 .hour-temp {
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 /* Widened by the full 16px .hourly-scroll gap and shifted left by half of that via margin-left,
@@ -669,8 +1107,8 @@ button:hover {
   width: calc(100% + 16px);
   height: 42px;
   margin: 2px 0 0 -8px;
-  border: 1px solid #d9c3ac;
-  background: #fffaf3;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
   overflow: hidden;
 }
 
@@ -698,7 +1136,7 @@ button:hover {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: #4a90d9;
+  background: var(--precip);
 }
 
 /* Anchored to the fill's own top edge (not a fixed position in the box), so the label rides up
@@ -711,7 +1149,7 @@ button:hover {
   right: 0;
   margin-bottom: 1px;
   font-size: 0.5rem;
-  color: #4a90d9;
+  color: var(--precip);
   text-align: center;
   white-space: nowrap;
   pointer-events: none;
@@ -720,11 +1158,11 @@ button:hover {
 /* Snow reuses the same box/bar/label structure as rain, just in a distinguishing color so the
    two substances don't read as the same thing when scrolling through mixed-precipitation hours. */
 .hour-rain-box-snow .hour-rain-fill {
-  background: #9fb3c8;
+  background: var(--snow-fill);
 }
 
 .hour-rain-box-snow .hour-rain-value {
-  color: #6b7f91;
+  color: var(--snow-text);
 }
 
 /* Details grid */
@@ -736,7 +1174,7 @@ button:hover {
 }
 
 .detail-card {
-  background: rgba(179, 113, 74, 0.12);
+  background: var(--surface-sunken);
   border-radius: 12px;
   padding: 12px;
 }
@@ -747,7 +1185,7 @@ button:hover {
 
 .detail-card .label {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -762,19 +1200,20 @@ button:hover {
 .detail-card .value {
   font-size: 1.3rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-top: 6px;
+  text-shadow: var(--glow-value);
 }
 
 .value-secondary {
   font-size: 0.8rem;
   font-weight: normal;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .detail-card .sub {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -791,27 +1230,27 @@ button:hover {
 }
 
 .uv-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 2;
 }
 
 .uv-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 3;
 }
 
 .uv-segment-orange {
-  background: #ff9800;
+  background: var(--scale-elevated);
   flex: 2;
 }
 
 .uv-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 3;
 }
 
 .uv-segment-violet {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 2;
 }
 
@@ -828,7 +1267,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .uv-marker-value {
@@ -838,7 +1277,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -855,32 +1294,32 @@ button:hover {
 }
 
 .aqi-segment-blue {
-  background: #03a9f4;
+  background: var(--scale-cool);
   flex: 1;
 }
 
 .aqi-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 1;
 }
 
 .aqi-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 1;
 }
 
 .aqi-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 1;
 }
 
 .aqi-segment-purple {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 1;
 }
 
 .aqi-segment-maroon {
-  background: #7b241c;
+  background: var(--scale-extreme);
   flex: 1;
 }
 
@@ -897,7 +1336,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .aqi-marker-value {
@@ -907,7 +1346,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -924,27 +1363,27 @@ button:hover {
 }
 
 .humidity-segment-blue {
-  background: #03a9f4;
+  background: var(--scale-cool);
   flex: 6;
 }
 
 .humidity-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 4;
 }
 
 .humidity-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 3;
 }
 
 .humidity-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 3;
 }
 
 .humidity-segment-purple {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 4;
 }
 
@@ -961,7 +1400,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .humidity-marker-value {
@@ -971,7 +1410,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -988,32 +1427,32 @@ button:hover {
 }
 
 .wind-segment-blue {
-  background: #03a9f4;
+  background: var(--scale-cool);
   flex: 12;
 }
 
 .wind-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 17;
 }
 
 .wind-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 21;
 }
 
 .wind-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 25;
 }
 
 .wind-segment-purple {
-  background: #9c27b0;
+  background: var(--scale-severe);
   flex: 28;
 }
 
 .wind-segment-maroon {
-  background: #7b241c;
+  background: var(--scale-extreme);
   flex: 27;
 }
 
@@ -1030,7 +1469,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .wind-marker-value {
@@ -1040,14 +1479,14 @@ button:hover {
   white-space: nowrap;
   font-size: 0.68rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
 .wind-marker-value-secondary {
   font-size: 0.6rem;
   font-weight: normal;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pressure-bar-wrap {
@@ -1063,17 +1502,17 @@ button:hover {
 }
 
 .pressure-segment-red {
-  background: #f44336;
+  background: var(--scale-high);
   flex: 30;
 }
 
 .pressure-segment-yellow {
-  background: #ffeb3b;
+  background: var(--scale-moderate);
   flex: 40;
 }
 
 .pressure-segment-green {
-  background: #4caf50;
+  background: var(--scale-good);
   flex: 30;
 }
 
@@ -1090,7 +1529,7 @@ button:hover {
   transform: translateX(-50%);
   width: 2px;
   height: 10px;
-  background: #4a3320;
+  background: var(--text-primary);
 }
 
 .pressure-marker-value {
@@ -1100,7 +1539,7 @@ button:hover {
   white-space: nowrap;
   font-size: 0.7rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -1121,12 +1560,12 @@ button:hover {
 
 .pressure-legend-main {
   font-size: 0.75rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pressure-legend-sub {
   font-size: 0.65rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .pressure-scale {
@@ -1139,7 +1578,7 @@ button:hover {
   position: absolute;
   top: 0;
   font-size: 0.6rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1169,72 +1608,73 @@ button:hover {
   max-width: 420px;
   height: auto;
   align-self: center;
+  filter: var(--arc-filter);
 }
 
 .sun-arc text {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
 }
 
 .sun-arc-baseline {
-  stroke: rgba(107, 78, 52, 0.3);
+  stroke: var(--arc-baseline);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
 }
 
 .sun-arc-elapsed {
   fill: none;
-  stroke: #d9a066;
+  stroke: var(--sun-track);
   stroke-width: 3;
   stroke-linecap: round;
 }
 
 .sun-arc-remaining {
   fill: none;
-  stroke: rgba(107, 78, 52, 0.35);
+  stroke: var(--arc-remaining);
   stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 4 5;
 }
 
 .sun-arc-tick {
-  stroke: #6b4e34;
+  stroke: var(--text-secondary);
   stroke-width: 1.5;
 }
 
 .sun-arc-glow {
-  fill: rgba(242, 169, 59, 0.25);
+  fill: var(--sun-glow);
 }
 
 .sun-arc-marker {
-  fill: #f2a93b;
-  stroke: #fdf3e7;
+  fill: var(--sun-marker);
+  stroke: var(--arc-marker-stroke);
   stroke-width: 2;
 }
 
 .sun-arc-side-label {
   font-size: 11px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .sun-arc-side-value {
   font-size: 20px;
   font-weight: bold;
-  fill: #4a3320;
+  fill: var(--text-primary);
 }
 
 .sun-arc-side-direction {
   font-size: 9px;
-  fill: #9c8267;
+  fill: var(--text-muted);
 }
 
 .sun-arc-horizon-label {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .sun-arc-horizon-compass {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .sun-arc-caption {
@@ -1243,14 +1683,15 @@ button:hover {
 
 .sun-arc-caption-label {
   font-size: 0.85rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .sun-arc-caption-value {
   display: block;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
+  text-shadow: var(--glow-value);
 }
 
 .sun-arc-caption-value-wrap {
@@ -1278,7 +1719,7 @@ button:hover {
 }
 
 .sun-arc-unavailable {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
@@ -1303,7 +1744,7 @@ button:hover {
   padding: 0 2px;
   font-size: 0.65rem;
   line-height: 1.2;
-  color: #6b4e34;
+  color: var(--text-secondary);
   text-align: center;
   white-space: nowrap;
 }
@@ -1325,7 +1766,7 @@ button:hover {
 .golden-hour-row {
   font-size: 0.65rem;
   line-height: 1.2;
-  color: #4a3320;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -1342,72 +1783,73 @@ button:hover {
   max-width: 420px;
   height: auto;
   align-self: center;
+  filter: var(--arc-filter);
 }
 
 .moon-arc text {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
 }
 
 .moon-arc-baseline {
-  stroke: rgba(107, 78, 52, 0.3);
+  stroke: var(--arc-baseline);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
 }
 
 .moon-arc-elapsed {
   fill: none;
-  stroke: #7c8ba1;
+  stroke: var(--moon-track);
   stroke-width: 3;
   stroke-linecap: round;
 }
 
 .moon-arc-remaining {
   fill: none;
-  stroke: rgba(107, 78, 52, 0.35);
+  stroke: var(--arc-remaining);
   stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 4 5;
 }
 
 .moon-arc-tick {
-  stroke: #6b4e34;
+  stroke: var(--text-secondary);
   stroke-width: 1.5;
 }
 
 .moon-arc-glow {
-  fill: rgba(124, 139, 161, 0.25);
+  fill: var(--moon-glow);
 }
 
 .moon-arc-marker {
-  fill: #9aa8bd;
-  stroke: #fdf3e7;
+  fill: var(--moon-marker);
+  stroke: var(--arc-marker-stroke);
   stroke-width: 2;
 }
 
 .moon-arc-side-label {
   font-size: 11px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .moon-arc-side-value {
   font-size: 20px;
   font-weight: bold;
-  fill: #4a3320;
+  fill: var(--text-primary);
 }
 
 .moon-arc-side-direction {
   font-size: 9px;
-  fill: #9c8267;
+  fill: var(--text-muted);
 }
 
 .moon-arc-horizon-label {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .moon-arc-horizon-compass {
   font-size: 9.75px;
-  fill: #6b4e34;
+  fill: var(--text-secondary);
 }
 
 .moon-arc-caption {
@@ -1416,25 +1858,19 @@ button:hover {
 
 .moon-arc-caption-label {
   font-size: 0.85rem;
-  color: #6b4e34;
+  color: var(--text-secondary);
 }
 
 .moon-arc-caption-value {
   display: block;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #4a3320;
-}
-
-.moon-phase-value {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
+  text-shadow: var(--glow-value);
 }
 
 .moon-arc-unavailable {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
@@ -1443,7 +1879,7 @@ button:hover {
 /* Moon phase section — independent from the Moonrise & moonset card above, own namespace */
 
 .moon-phase-section-unavailable {
-  color: #6b4e34;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-align: center;
   margin: 8px 0;
@@ -1454,7 +1890,7 @@ button:hover {
   display: flex;
   justify-content: space-between;
   font-size: 0.6rem;
-  color: #9c8267;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -1482,14 +1918,14 @@ button:hover {
 }
 
 .moon-phase-icon-current {
-  background: rgba(179, 113, 74, 0.18);
+  background: var(--surface-accent-wash);
   transform: scale(1.15);
 }
 
 .moon-phase-indicator {
   position: absolute;
   top: 0;
-  color: #b3714a;
+  color: var(--accent);
   font-size: 0.8rem;
   line-height: 1;
   white-space: nowrap;
@@ -1521,14 +1957,14 @@ button:hover {
   flex: 1;
   text-align: center;
   font-size: 0.6rem;
-  color: #9c8267;
+  color: var(--text-muted);
 }
 
 .moon-phase-label {
   text-align: center;
   font-size: 0.95rem;
   font-weight: bold;
-  color: #4a3320;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
@@ -1536,7 +1972,7 @@ button:hover {
   text-align: center;
   font-size: 0.75rem;
   font-style: italic;
-  color: #6b4e34;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
@@ -1552,7 +1988,7 @@ button:hover {
   align-items: center;
   justify-content: space-between;
   padding: 8px 4px;
-  border-bottom: 1px solid rgba(179, 113, 74, 0.15);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
 .daily-row:last-child {
@@ -1562,7 +1998,7 @@ button:hover {
 .daily-row .day {
   width: 80px;
   font-size: 0.9rem;
-  color: #4a3320;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -1576,7 +2012,7 @@ button:hover {
 .daily-condition {
   font-size: 0.55rem;
   line-height: 1;
-  color: #9c8267;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1589,14 +2025,14 @@ button:hover {
   margin-left: 18px;
   text-align: center;
   font-size: 0.8rem;
-  color: #4a90d9;
+  color: var(--precip);
 }
 
 .daily-row .temps {
   width: 90px;
   text-align: right;
   font-size: 0.9rem;
-  color: #4a3320;
+  color: var(--text-primary);
 }
 
 .daily-header .day,
@@ -1604,12 +2040,12 @@ button:hover {
 .daily-header .temps {
   font-size: 0.7rem;
   font-weight: normal;
-  color: #9c8267;
+  color: var(--text-muted);
 }
 
 .daily-header .prob {
   font-size: 1.1rem;
-  color: #9c8267;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -1636,5 +2072,301 @@ button:hover {
   line-height: 1.1;
   font-size: 0.65rem;
   font-weight: normal;
-  color: #9c8267;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Synthwave radio
+
+   A slim deck across the top of the page. There is no video window to make
+   room for -- the stream is plain <audio> -- so the panel is only as tall as
+   one row of controls.
+   ========================================================================== */
+
+/* The radio belongs to the Synthwave edition, not to the weather app proper,
+   so the classic theme does not carry it at all. script.js stops playback when
+   the theme is switched away, so this never hides a deck that is still going. */
+html[data-theme="classic"] .player-outer {
+  display: none;
+}
+
+/* Capped at the panel's own width rather than the layout's, so body's
+   align-items: center centres the deck itself. Left at 1064px the panel sat
+   against the left edge of a much wider box, and drifted away from the weather
+   card as the window resized and the card re-centred. */
+.player-outer {
+  width: 90%;
+  max-width: 440px;
+  display: flex;
+}
+
+.player-panel {
+  width: 100%;
+  /* Matches .card and .pollen-panel, so all three line up on the same edge
+     rather than the deck running the full width of the layout. */
+  max-width: 440px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: var(--surface-card);
+  text-align: left;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--card-backdrop-filter);
+  -webkit-backdrop-filter: var(--card-backdrop-filter);
+}
+
+.player-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.player-side {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-eyebrow {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The station name carries the credit link now that the attribution line under
+   the panel is gone. Styled to read as part of the heading rather than as a
+   link, since the whole heading is the station. */
+.player-panel h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.player-panel h3 a:hover {
+  text-decoration: underline;
+}
+
+.player-panel h3 {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-shadow: var(--glow-heading);
+}
+
+.player-launch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: 10px;
+  min-width: 122px;
+  padding: 12px 22px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent-strong);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: var(--display-tracking);
+  cursor: pointer;
+  box-shadow: var(--glow-accent);
+}
+
+.player-launch:hover {
+  background: var(--accent-hover);
+}
+
+.player-launch-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.player-nowplaying {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.player-nowplaying-label {
+  flex: none;
+}
+
+/* The window the title scrolls inside. min-width: 0 is what lets a flex item
+   shrink below its content width -- without it the long title would stretch
+   this open and push the panel wider instead of overflowing inside it. */
+.player-nowplaying-viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#player-nowplaying-track {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Only added when the title is measured as too wide to fit. The distance and
+   duration come from that measurement, set as custom properties by script.js,
+   so the scroll always travels exactly the hidden amount and long titles take
+   proportionally longer rather than whipping past. */
+#player-nowplaying-track.is-scrolling {
+  animation: player-marquee var(--marquee-duration, 8s) ease-in-out infinite alternate;
+}
+
+@keyframes player-marquee {
+  /* Holds at each end so the start and the end of the title are both readable
+     rather than only glimpsed at the turn. */
+  0%, 15% {
+    transform: translateX(0);
+  }
+  85%, 100% {
+    transform: translateX(var(--marquee-shift, 0));
+  }
+}
+
+.player-nowplaying-label {
+  color: var(--text-muted);
+}
+
+/* Its own row under the transport: at 440px the volume and channel controls
+   cannot sit beside the title without squeezing it to nothing. */
+.player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 10px;
+}
+
+.player-volume-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-control-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+#player-volume {
+  width: 90px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+#player-channel {
+  padding: 5px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.player-note {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* No stacking breakpoint any more: the panel is capped at 440px at every
+   viewport, the controls already sit on their own row, and an over-long title
+   scrolls inside its viewport rather than forcing the row wider. */
+
+/* ==========================================================================
+   Synthwave-only rules
+
+   These three can't be expressed as token values, so unlike everything above
+   they have to be scoped to the theme by hand. :not([data-theme="classic"])
+   rather than [data-theme="synthwave"], because synthwave is also what you get
+   when no attribute is set at all.
+   ========================================================================== */
+
+/* Chromium's scrollbars. color-scheme already darkens the native ones in both
+   Chromium and Firefox; scrollbar-color handles Firefox's tint, and these
+   handle Chromium's. .hourly-scroll and .suggestions are the two scrollers. */
+html:not([data-theme="classic"]) .hourly-scroll,
+html:not([data-theme="classic"]) .suggestions {
+  scrollbar-color: var(--scrollbar-color);
+  scrollbar-width: thin;
+}
+
+html:not([data-theme="classic"]) .hourly-scroll::-webkit-scrollbar,
+html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html:not([data-theme="classic"]) .hourly-scroll::-webkit-scrollbar-track,
+html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar-track {
+  background: var(--surface-sunken);
+  border-radius: 4px;
+}
+
+html:not([data-theme="classic"]) .hourly-scroll::-webkit-scrollbar-thumb,
+html:not([data-theme="classic"]) .suggestions::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+/* Without backdrop-filter the panels would sit as flat 78%-opaque violet over
+   a bright gradient, which drops the small muted text under 4.5:1. Going
+   near-opaque is the safe fallback. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html:not([data-theme="classic"]) {
+    --surface-card: rgba(24, 6, 50, 0.94);
+  }
+}
+
+/* ==========================================================================
+   Reduced motion
+
+   The universal rule is the safety net and does cover ::before/::after; the
+   three explicit rules make the intent readable and, for .temp-big, pin the
+   glow to its resting value rather than whatever frame it froze on.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html::before {
+    animation: none !important;
+  }
+
+  body::after {
+    animation: none !important;
+  }
+
+  .temp-big {
+    animation: none !important;
+    text-shadow: var(--glow-temp);
+  }
+}
+
+/* Orbitron is a lot wider than Arial at the same size, so on narrow screens
+   "Weather App" no longer fits the header row beside the unit toggle and the
+   theme pill, and wraps to two lines. Scoped to the theme that has the problem
+   so classic keeps its original heading size at every width. */
+@media (max-width: 430px) {
+  html:not([data-theme="classic"]) h1 {
+    font-size: 1.25rem;
+    letter-spacing: 0.03em;
+  }
 }
