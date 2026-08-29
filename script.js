@@ -116,7 +116,10 @@ function applyThemeToggleUI() {
   const isSynthwave = theme === 'synthwave';
   btn.setAttribute('aria-pressed', String(isSynthwave));
   btn.title = isSynthwave ? 'Switch to classic theme' : 'Switch to synthwave theme';
-  btn.textContent = isSynthwave ? '🌇' : '🌤️';
+  // The icon shows where the button takes you, not where you already are, so it
+  // reads the same way round as the tooltip beside it: night city to go into
+  // Synthwave, daylight to come back out.
+  btn.textContent = isSynthwave ? '🌤️' : '🌇';
 }
 
 // Deliberately does NOT re-render, unlike the unit toggle above. Units change the data; the
@@ -128,6 +131,11 @@ document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
     theme = theme === 'synthwave' ? 'classic' : 'synthwave';
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     applyThemeToggleUI();
+    // The classic theme hides the radio entirely, and hiding a deck that is
+    // still playing would leave audio running with no way to reach the stop
+    // button. Safe to call from here: this only ever runs on a real click, long
+    // after the radio section at the foot of the file has initialised.
+    if (theme === 'classic') disconnectRadio();
   });
 });
 
@@ -2072,7 +2080,6 @@ const playerToggleLabel = document.getElementById('player-toggle-label');
 const playerToggleIcon = playerToggle.querySelector('.player-launch-icon');
 const playerVolume = document.getElementById('player-volume');
 const playerChannel = document.getElementById('player-channel');
-const playerChannelName = document.getElementById('player-channel-name');
 const playerNowPlaying = document.getElementById('player-nowplaying');
 const playerNowPlayingTrack = document.getElementById('player-nowplaying-track');
 const playerNote = document.getElementById('player-note');
@@ -2209,10 +2216,10 @@ RADIO_CHANNELS.forEach((channel) => {
   playerChannel.appendChild(option);
 });
 
-function syncChannelLabel() {
-  const current = RADIO_CHANNELS.find((channel) => channel.id === storedChannel());
-  playerChannel.value = current.id;
-  playerChannelName.textContent = current.name;
+// The picker is the only place the channel is named now, so there is nothing
+// else to keep in step with it.
+function syncChannelSelect() {
+  playerChannel.value = storedChannel();
 }
 
 playerToggle.addEventListener('click', () => {
@@ -2231,7 +2238,7 @@ playerVolume.addEventListener('input', () => {
 
 playerChannel.addEventListener('change', () => {
   localStorage.setItem(CHANNEL_STORAGE_KEY, playerChannel.value);
-  syncChannelLabel();
+  syncChannelSelect();
   // Switching channel mid-listen should keep playing, just from the new stream.
   if (!radio.paused) connectRadio();
 });
@@ -2254,6 +2261,6 @@ radio.addEventListener('error', () => {
 
 playerVolume.value = String(storedVolume());
 radio.volume = storedVolume() / 100;
-syncChannelLabel();
+syncChannelSelect();
 setToggleState('idle');
 setPlayerNote('');

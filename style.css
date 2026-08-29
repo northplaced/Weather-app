@@ -2076,6 +2076,13 @@ button:hover {
    one row of controls.
    ========================================================================== */
 
+/* The radio belongs to the Synthwave edition, not to the weather app proper,
+   so the classic theme does not carry it at all. script.js stops playback when
+   the theme is switched away, so this never hides a deck that is still going. */
+html[data-theme="classic"] .player-outer {
+  display: none;
+}
+
 .player-outer {
   width: 90%;
   max-width: 1064px;
@@ -2139,16 +2146,6 @@ button:hover {
 .player-launch-icon {
   font-size: 1rem;
   line-height: 1;
-}
-
-.player-meta {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--text-primary);
-}
-
-.player-track {
-  font-weight: bold;
 }
 
 .player-nowplaying {
