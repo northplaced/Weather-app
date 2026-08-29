@@ -2027,81 +2027,57 @@ applyUnitToggleUI();
 cityInput.value = 'Tampere';
 updateClearButtonVisibility();
 searchCity('Tampere');
-
 // ---------------------------------------------------------------------------
 // Synthwave radio
 //
-// Plays one track through YouTube's IFrame Player API. Two constraints shape
-// the whole design:
+// A plain <audio> element pointed at Nightride FM, deliberately not an embedded
+// player. That choice is the whole point of this section: every iframe embed
+// (YouTube, Spotify, SoundCloud) requires a real origin and a Referer, so none
+// of them will start on a page opened straight from disk — YouTube answers with
+// "Error 153" and no amount of configuration changes it. Audio playback needs
+// neither, so this behaves identically from file:///C:/... and from a hosted
+// https:// origin.
 //
-//   1. YouTube's terms require the player to stay visible while it plays, and
-//      don't allow separating the audio from the video. So there is no hidden
-//      player and no "keep playing while collapsed" — Stop destroys the player
-//      outright, which is also the only way to be sure the audio has stopped.
-//   2. Browsers refuse autoplay with sound without a user gesture, so nothing
-//      can start on page load. Playback always begins from the Play button.
-//
-// The API script is fetched on that first press rather than at page load, so
-// visitors who never touch the music load no third-party code at all.
+// Browsers still refuse to start audio without a user gesture, so playback
+// always begins from the Play button; nothing autoplays on load.
 // ---------------------------------------------------------------------------
 
-const YT_VIDEO_ID = 'Z4F6HFn6IZU';
+const RADIO_CHANNELS = [
+  { id: 'nightride', name: 'Synthwave' },
+  { id: 'chillsynth', name: 'Chillsynth' },
+  { id: 'datawave', name: 'Datawave' },
+  { id: 'spacesynth', name: 'Spacesynth' },
+  { id: 'darksynth', name: 'Darksynth' },
+  { id: 'horrorsynth', name: 'Horrorsynth' },
+];
+
 const VOLUME_STORAGE_KEY = 'weatherapp-volume';
+const CHANNEL_STORAGE_KEY = 'weatherapp-radio-channel';
 
-// The origin player parameter is only meaningful for a real web origin. Opened
-// straight from disk the page's origin is the string "null", which YouTube
-// rejects — one of the ways to end up staring at "Error 153".
-const isWebOrigin = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-
-const YT_ERROR_MESSAGES = {
-  2: 'That video ID is not valid.',
-  5: 'The video player hit a problem in this browser.',
-  100: 'That video is unavailable — it may have been removed or made private.',
-  101: 'The rights holder does not allow this track to play inside other sites.',
-  150: 'The rights holder does not allow this track to play inside other sites.',
-  153: 'YouTube would not start the embedded player. This usually means the page '
-    + 'was opened straight from disk — serve the folder over http:// instead and it will play.',
-};
-
-const playerStage = document.getElementById('player-stage');
-const playerLaunch = document.getElementById('player-launch');
-const playerControls = document.getElementById('player-controls');
 const playerToggle = document.getElementById('player-toggle');
-const playerStop = document.getElementById('player-stop');
+const playerToggleLabel = document.getElementById('player-toggle-label');
+const playerToggleIcon = playerToggle.querySelector('.player-launch-icon');
 const playerVolume = document.getElementById('player-volume');
+const playerChannel = document.getElementById('player-channel');
+const playerChannelName = document.getElementById('player-channel-name');
 const playerNote = document.getElementById('player-note');
 
-let ytPlayer = null;
-let ytApiPromise = null;
+const radio = new Audio();
+radio.preload = 'none';
 
+// Null has to be rejected before the range check, not by it: Number(null) is 0,
+// which is a perfectly valid volume, so a first-time listener with nothing saved
+// yet would otherwise get a silent player and no clue why.
 function storedVolume() {
-  const raw = Number(localStorage.getItem(VOLUME_STORAGE_KEY));
-  return Number.isFinite(raw) && raw >= 0 && raw <= 100 ? raw : 60;
+  const raw = localStorage.getItem(VOLUME_STORAGE_KEY);
+  if (raw === null) return 60;
+  const level = Number(raw);
+  return Number.isFinite(level) && level >= 0 && level <= 100 ? level : 60;
 }
 
-// Resolves once window.YT is usable. The API calls a single global hook when it
-// loads, so this chains onto any existing one rather than overwriting it, and
-// caches the promise so a second press never injects the script twice.
-function loadYouTubeApi() {
-  if (ytApiPromise) return ytApiPromise;
-
-  ytApiPromise = new Promise((resolve, reject) => {
-    if (window.YT && window.YT.Player) {
-      resolve(window.YT);
-      return;
-    }
-    const previousHook = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      if (typeof previousHook === 'function') previousHook();
-      resolve(window.YT);
-    };
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    tag.onerror = () => reject(new Error('script blocked'));
-    document.head.appendChild(tag);
-  });
-
-  return ytApiPromise;
+function storedChannel() {
+  const saved = localStorage.getItem(CHANNEL_STORAGE_KEY);
+  return RADIO_CHANNELS.some((channel) => channel.id === saved) ? saved : RADIO_CHANNELS[0].id;
 }
 
 function setPlayerNote(message) {
@@ -2109,195 +2085,96 @@ function setPlayerNote(message) {
   playerNote.style.display = message ? 'block' : 'none';
 }
 
-// Back to the pre-play state: no player, no audio, just the Play button.
-function teardownPlayer() {
-  if (ytPlayer) {
-    ytPlayer.destroy();
-    ytPlayer = null;
-  }
-  playerStage.innerHTML = '';
-  playerStage.appendChild(playerLaunch);
-  playerLaunch.disabled = false;
-  playerLaunch.querySelector('span:last-child').textContent = 'Play';
-  playerControls.hidden = true;
-  playerStage.classList.remove('is-live');
+function setToggleState(state) {
+  const labels = { playing: 'Pause', connecting: 'Connecting', idle: 'Play' };
+  playerToggleIcon.innerHTML = state === 'playing' ? '&#10074;&#10074;' : '&#9654;';
+  playerToggleLabel.textContent = labels[state];
+  playerToggle.setAttribute('aria-pressed', String(state !== 'idle'));
 }
 
-playerVolume.value = String(storedVolume());
+// A live stream has no meaningful paused position: leaving the connection open
+// would just buffer air. Stopping releases it, and playing again reconnects to
+// whatever is going out now, which is what "live" should mean.
+function disconnectRadio() {
+  radio.pause();
+  radio.removeAttribute('src');
+  radio.load();
+  setToggleState('idle');
+}
+
+function connectRadio() {
+  const channel = storedChannel();
+  radio.src = `https://stream.nightride.fm/${channel}.mp3`;
+  radio.volume = storedVolume() / 100;
+  setToggleState('connecting');
+  setPlayerNote('');
+
+  const attempt = radio.play();
+  if (attempt && typeof attempt.catch === 'function') {
+    attempt.catch(() => {
+      // Either the browser declined to start the audio, or the stream could not
+      // be reached. The error event handler covers the second case with a better
+      // message, so only fall back to a generic one if it stays silent.
+      if (radio.paused) {
+        setToggleState('idle');
+        setPlayerNote('Could not start playback. Check the connection, or open the station directly.');
+      }
+    });
+  }
+}
+
+RADIO_CHANNELS.forEach((channel) => {
+  const option = document.createElement('option');
+  option.value = channel.id;
+  option.textContent = channel.name;
+  playerChannel.appendChild(option);
+});
+
+function syncChannelLabel() {
+  const current = RADIO_CHANNELS.find((channel) => channel.id === storedChannel());
+  playerChannel.value = current.id;
+  playerChannelName.textContent = current.name;
+}
+
+playerToggle.addEventListener('click', () => {
+  if (radio.paused) {
+    connectRadio();
+  } else {
+    disconnectRadio();
+  }
+});
 
 playerVolume.addEventListener('input', () => {
   const level = Number(playerVolume.value);
   localStorage.setItem(VOLUME_STORAGE_KEY, String(level));
-  if (ytPlayer) ytPlayer.setVolume(level);
+  radio.volume = level / 100;
 });
 
-playerToggle.addEventListener('click', () => {
-  if (!ytPlayer) return;
-  const state = ytPlayer.getPlayerState();
-  if (state === window.YT.PlayerState.PLAYING) {
-    ytPlayer.pauseVideo();
-  } else {
-    ytPlayer.playVideo();
-  }
+playerChannel.addEventListener('change', () => {
+  localStorage.setItem(CHANNEL_STORAGE_KEY, playerChannel.value);
+  syncChannelLabel();
+  // Switching channel mid-listen should keep playing, just from the new stream.
+  if (!radio.paused) connectRadio();
 });
 
-playerStop.addEventListener('click', teardownPlayer);
-
-// Detecting a failed embed is trickier than it looks. onReady fires even for a
-// video that cannot play at all — it reports that the player *shell* is up, not
-// that there is anything to play — and YouTube's "Video player configuration
-// error" (153) renders inside the iframe without necessarily firing onError.
-// Measured, the two cases differ like this:
-//
-//   working   onReady, states -1 -> 3 -> 1, getDuration() 235
-//   broken    onReady, no state changes at all, getDuration() 0
-//
-// So the success condition is that the player actually reaches BUFFERING,
-// PLAYING or CUED — never onReady on its own. A non-zero duration at the
-// timeout counts too, which covers a browser that refused to autoplay but has
-// the video loaded and ready.
-//
-// A failed attempt is retried against the nocookie host, which some privacy
-// settings and content blockers permit when the standard host is blocked. Not a
-// guaranteed fix, but it costs one retry.
-const PLAYER_HOSTS = ['https://www.youtube.com', 'https://www.youtube-nocookie.com'];
-const PLAYER_START_TIMEOUT = 9000;
-
-function attemptPlayer(host) {
-  return new Promise((resolve) => {
-    // YT.Player replaces the element it is given, so it gets a throwaway mount
-    // node rather than the stage itself.
-    const mount = document.createElement('div');
-    playerStage.innerHTML = '';
-    playerStage.appendChild(mount);
-
-    let settled = false;
-    let timer = null;
-    const settle = (result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(result);
-    };
-
-    const player = new window.YT.Player(mount, {
-      host,
-      videoId: YT_VIDEO_ID,
-      playerVars: {
-        autoplay: 1,
-        playsinline: 1,
-        rel: 0,
-        // The native toolbar stays switched on deliberately: it carries the
-        // fullscreen button, which is the only way to actually watch the video
-        // rather than just listen to it.
-        controls: 1,
-        fs: 1,
-        ...(isWebOrigin ? { origin: window.location.origin } : {}),
-      },
-      events: {
-        onReady: (event) => {
-          event.target.setVolume(storedVolume());
-          event.target.playVideo();
-          event.target.getIframe().title = 'Synthwave background music player';
-        },
-        onStateChange: (event) => {
-          const states = window.YT.PlayerState;
-
-          if (event.data === states.BUFFERING
-            || event.data === states.PLAYING
-            || event.data === states.CUED) {
-            settle({ ok: true, player });
-          }
-
-          if (event.data === states.ENDED) {
-            // Loop. playerVars loop+playlist is the documented alternative but
-            // is unreliable for a single video, so ENDED is handled directly.
-            event.target.seekTo(0);
-            event.target.playVideo();
-            return;
-          }
-
-          const playing = event.data === states.PLAYING;
-          playerToggle.innerHTML = playing ? '&#10074;&#10074; Pause' : '&#9654; Play';
-        },
-        onError: (event) => settle({ ok: false, code: event.data, player }),
-      },
-    });
-
-    timer = setTimeout(() => {
-      let duration = 0;
-      try { duration = player.getDuration() || 0; } catch (error) { /* not far enough along to ask */ }
-      settle(duration > 0 ? { ok: true, player } : { ok: false, code: 'no-response', player });
-    }, PLAYER_START_TIMEOUT);
-  });
-}
-
-playerLaunch.addEventListener('click', async () => {
-  // Opened straight from disk there is no point trying: the page has no real
-  // origin and sends no Referer, and YouTube rejects the embed outright. Saying
-  // so beats letting the iframe show its own unexplained error.
-  if (window.location.protocol === 'file:') {
-    setPlayerNote('This page was opened straight from disk (file://), and YouTube will not '
-      + 'run an embedded player there. Serve the folder over http:// — e.g. "npx http-server . '
-      + '-p 5501" — then open http://localhost:5501 and the music will play.');
-    return;
-  }
-
-  playerLaunch.disabled = true;
-  playerLaunch.querySelector('span:last-child').textContent = 'Loading';
+radio.addEventListener('playing', () => {
+  setToggleState('playing');
   setPlayerNote('');
-
-  try {
-    await loadYouTubeApi();
-  } catch (error) {
-    playerLaunch.disabled = false;
-    playerLaunch.querySelector('span:last-child').textContent = 'Play';
-    setPlayerNote('Could not load the YouTube player script — an extension or content blocker '
-      + 'may be stopping it. Use the track link below instead.');
-    return;
-  }
-
-  playerStage.classList.add('is-live');
-  let lastCode = null;
-
-  for (const host of PLAYER_HOSTS) {
-    const result = await attemptPlayer(host);
-    if (result.ok) {
-      ytPlayer = result.player;
-      playerControls.hidden = false;
-      setPlayerNote('');
-      return;
-    }
-    lastCode = result.code;
-    try { result.player.destroy(); } catch (error) { /* already gone */ }
-  }
-
-  // Every host failed. Report what was actually observed rather than a generic
-  // apology, so the cause is diagnosable from the page itself.
-  const detail = typeof lastCode === 'number'
-    ? (YT_ERROR_MESSAGES[lastCode] || `The player reported error ${lastCode}.`)
-    : 'The player never finished starting up — usually a content blocker, strict tracking '
-      + 'protection, or blocked third-party cookies for youtube.com.';
-  setPlayerNote(`${detail} (page served over ${window.location.protocol}) `
-    + 'The track link below always works.');
-  teardownPlayer();
 });
 
-// Opened straight from disk there is no real origin and no Referer, and YouTube
-// refuses to start an embedded player at all — error 153, every time, for any
-// video. Nothing here can work around it, so say so up front rather than
-// offering a Play button that cannot possibly work.
-function initPlayerAvailability() {
-  if (window.location.protocol !== 'file:') {
-    setPlayerNote('');
-    return;
-  }
+radio.addEventListener('waiting', () => {
+  if (!radio.paused) setToggleState('connecting');
+});
 
-  playerLaunch.disabled = true;
-  playerLaunch.querySelector('span:last-child').textContent = 'Unavailable';
-  setPlayerNote('YouTube will not run an embedded player on a page opened from disk (file://). '
-    + 'Serve this folder over http:// — for example "npx http-server . -p 5501" — then open '
-    + 'http://localhost:5501 and the music will play. Everything else on the page works either way.');
-}
+radio.addEventListener('error', () => {
+  // Fires on teardown too, when the src has deliberately been removed.
+  if (!radio.getAttribute('src')) return;
+  disconnectRadio();
+  setPlayerNote('Could not reach the stream. The station link below always works.');
+});
 
-initPlayerAvailability();
+playerVolume.value = String(storedVolume());
+radio.volume = storedVolume() / 100;
+syncChannelLabel();
+setToggleState('idle');
+setPlayerNote('');

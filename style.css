@@ -2071,9 +2071,9 @@ button:hover {
 /* ==========================================================================
    Synthwave radio
 
-   A slim deck across the top of the page. Laid out as a row -- player on the
-   left, title and transport on the right -- so the panel is about as tall as
-   the video window itself rather than stacking controls underneath it.
+   A slim deck across the top of the page. There is no video window to make
+   room for -- the stream is plain <audio> -- so the panel is only as tall as
+   one row of controls.
    ========================================================================== */
 
 .player-outer {
@@ -2083,11 +2083,8 @@ button:hover {
 }
 
 .player-panel {
-  display: flex;
-  align-items: center;
-  gap: 20px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-radius: 12px;
   background: var(--surface-card);
   text-align: left;
@@ -2096,31 +2093,10 @@ button:hover {
   -webkit-backdrop-filter: var(--card-backdrop-filter);
 }
 
-.player-stage {
+.player-main {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex: none;
-  /* The IFrame API documents 200x200 as the smallest the player can be and
-     still render its own controls, and the fullscreen button lives in those
-     controls -- so this is as small as the window goes. */
-  width: 356px;
-  max-width: 100%;
-  height: 200px;
-  border-radius: 10px;
-  background: var(--surface-sunken);
-}
-
-/* YT.Player swaps in an iframe carrying its own width/height attributes, so
-   these have to win. */
-.player-stage iframe {
-  width: 100%;
-  height: 100%;
-  min-width: 200px;
-  min-height: 200px;
-  border: 0;
-  border-radius: 10px;
-  display: block;
+  gap: 20px;
 }
 
 .player-side {
@@ -2129,7 +2105,7 @@ button:hover {
 }
 
 .player-panel h3 {
-  margin: 0 0 6px;
+  margin: 0 0 2px;
   font-size: 0.95rem;
   color: var(--text-secondary);
   font-family: var(--font-display);
@@ -2140,8 +2116,11 @@ button:hover {
 .player-launch {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: none;
   gap: 10px;
-  padding: 12px 26px;
+  min-width: 122px;
+  padding: 12px 22px;
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
   background: var(--accent);
@@ -2157,13 +2136,8 @@ button:hover {
   background: var(--accent-hover);
 }
 
-.player-launch:disabled {
-  cursor: default;
-  opacity: 0.65;
-}
-
 .player-launch-icon {
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -2189,25 +2163,8 @@ button:hover {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-top: 10px;
-}
-
-.player-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  background: var(--surface-raised);
-  color: var(--text-secondary);
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: none;
-}
-
-.player-btn:hover {
-  background: var(--surface-hover);
+  gap: 8px 16px;
+  flex: none;
 }
 
 .player-volume-wrap {
@@ -2216,7 +2173,7 @@ button:hover {
   gap: 6px;
 }
 
-.player-volume-label {
+.player-control-label {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
@@ -2227,6 +2184,18 @@ button:hover {
   cursor: pointer;
 }
 
+#player-channel {
+  padding: 5px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .player-note {
   margin: 8px 0 0;
   font-size: 0.75rem;
@@ -2234,7 +2203,7 @@ button:hover {
 }
 
 .player-attribution {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 0.65rem;
   color: var(--text-muted);
 }
@@ -2243,30 +2212,21 @@ button:hover {
   color: inherit;
 }
 
-/* Below this the row cannot hold a 356px player and readable text side by
-   side, so the deck stacks and centres instead. */
+/* Below this the row cannot hold the transport, the title and the controls
+   side by side, so the deck stacks and centres instead. */
 @media (max-width: 700px) {
   .player-panel {
-    flex-direction: column;
     text-align: center;
+  }
+
+  .player-main {
+    flex-direction: column;
+    gap: 12px;
   }
 
   .player-controls {
     justify-content: center;
   }
-}
-
-.page-footer {
-  width: 90%;
-  max-width: 1064px;
-  margin-top: -8px;
-  text-align: center;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-}
-
-.page-footer a {
-  color: inherit;
 }
 
 /* ==========================================================================
