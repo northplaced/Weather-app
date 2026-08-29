@@ -122,10 +122,16 @@ const SYNTHWAVE_SUN_ICON = `
         <stop offset="42%" stop-color="#ff9838"/>
         <stop offset="100%" stop-color="#ff3f72"/>
       </linearGradient>
+      <!-- The slats are full-width bars, but the disc narrows towards the
+           bottom, so without this they overshoot its edge and stick out as
+           tabs. Clipping to the disc lets each bar end exactly on the curve. -->
+      <clipPath id="synthwave-sun-clip">
+        <circle cx="16" cy="16" r="11"/>
+      </clipPath>
     </defs>
     <circle cx="16" cy="16" r="15" fill="#6d3d73"/>
     <circle cx="16" cy="16" r="11" fill="url(#synthwave-sun-gradient)"/>
-    <g fill="#6d3d73">
+    <g fill="#6d3d73" clip-path="url(#synthwave-sun-clip)">
       <rect x="3" y="16.9" width="26" height="1"/>
       <rect x="3" y="19.3" width="26" height="1.3"/>
       <rect x="3" y="21.9" width="26" height="1.6"/>

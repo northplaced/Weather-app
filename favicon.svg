@@ -8,11 +8,17 @@
       <stop offset="42%" stop-color="#ff9838"/>
       <stop offset="100%" stop-color="#ff3f72"/>
     </linearGradient>
+    <!-- The slats are full-width bars, but the disc narrows towards the bottom,
+         so without this they overshoot its edge and stick out as tabs. Clipping
+         to the disc lets each bar end exactly on the curve. -->
+    <clipPath id="sun-clip">
+      <circle cx="32" cy="32" r="21"/>
+    </clipPath>
   </defs>
   <rect width="64" height="64" rx="14" fill="#332a52"/>
   <circle cx="32" cy="32" r="27" fill="#6d3d73"/>
   <circle cx="32" cy="32" r="21" fill="url(#sun)"/>
-  <g fill="#6d3d73">
+  <g fill="#6d3d73" clip-path="url(#sun-clip)">
     <rect x="4" y="33.2" width="56" height="2"/>
     <rect x="4" y="38.2" width="56" height="2.6"/>
     <rect x="4" y="43.8" width="56" height="3.2"/>
