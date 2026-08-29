@@ -2127,6 +2127,7 @@ const playerToggleIcon = playerToggle.querySelector('.player-launch-icon');
 const playerVolume = document.getElementById('player-volume');
 const playerChannel = document.getElementById('player-channel');
 const playerNowPlaying = document.getElementById('player-nowplaying');
+const playerNowPlayingViewport = document.getElementById('player-nowplaying-viewport');
 const playerNowPlayingTrack = document.getElementById('player-nowplaying-track');
 const playerNote = document.getElementById('player-note');
 
@@ -2136,11 +2137,41 @@ radio.preload = 'none';
 let radioMeta = null;
 let radioMetaReceived = false;
 
+// Scrolls the title only when it genuinely does not fit, and only as far as it
+// actually overhangs. Both the distance and the duration come from the measured
+// overflow, so a slightly-too-long title creeps and a very long one takes
+// proportionally longer instead of racing past at the same speed.
+function updateNowPlayingMarquee() {
+  playerNowPlayingTrack.classList.remove('is-scrolling');
+  playerNowPlayingTrack.style.removeProperty('--marquee-shift');
+  playerNowPlayingTrack.style.removeProperty('--marquee-duration');
+
+  if (playerNowPlaying.hidden) return;
+
+  // Measured with the class removed above, so this reads the resting width
+  // rather than whatever offset a running animation had reached.
+  const overflow = playerNowPlayingTrack.scrollWidth - playerNowPlayingViewport.clientWidth;
+  if (overflow <= 1) return;
+
+  playerNowPlayingTrack.style.setProperty('--marquee-shift', `${-overflow}px`);
+  playerNowPlayingTrack.style.setProperty('--marquee-duration', `${Math.max(5, overflow / 16)}s`);
+  playerNowPlayingTrack.classList.add('is-scrolling');
+}
+
 function setNowPlaying(text) {
   // textContent, never innerHTML: these strings come off a third-party feed.
   playerNowPlayingTrack.textContent = text || '';
   playerNowPlaying.hidden = !text;
+  updateNowPlayingMarquee();
 }
+
+// Whether a title overflows depends on the panel's width, so this has to be
+// reconsidered when the window changes, not just when the track does.
+let nowPlayingResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(nowPlayingResizeTimer);
+  nowPlayingResizeTimer = setTimeout(updateNowPlayingMarquee, 150);
+});
 
 function stopMeta() {
   if (radioMeta) {

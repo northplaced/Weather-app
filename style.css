@@ -2094,6 +2094,9 @@ html[data-theme="classic"] .player-outer {
 
 .player-panel {
   width: 100%;
+  /* Matches .card and .pollen-panel, so all three line up on the same edge
+     rather than the deck running the full width of the layout. */
+  max-width: 440px;
   padding: 14px 20px;
   border-radius: 12px;
   background: var(--surface-card);
@@ -2172,26 +2175,64 @@ html[data-theme="classic"] .player-outer {
 }
 
 .player-nowplaying {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
   margin: 2px 0 0;
   font-size: 0.78rem;
   color: var(--text-primary);
-  /* Track names run long and the deck is a fixed row, so this truncates rather
-     than pushing the controls around every time the song changes. */
+}
+
+.player-nowplaying-label {
+  flex: none;
+}
+
+/* The window the title scrolls inside. min-width: 0 is what lets a flex item
+   shrink below its content width -- without it the long title would stretch
+   this open and push the panel wider instead of overflowing inside it. */
+.player-nowplaying-viewport {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+#player-nowplaying-track {
+  display: inline-block;
   white-space: nowrap;
+}
+
+/* Only added when the title is measured as too wide to fit. The distance and
+   duration come from that measurement, set as custom properties by script.js,
+   so the scroll always travels exactly the hidden amount and long titles take
+   proportionally longer rather than whipping past. */
+#player-nowplaying-track.is-scrolling {
+  animation: player-marquee var(--marquee-duration, 8s) ease-in-out infinite alternate;
+}
+
+@keyframes player-marquee {
+  /* Holds at each end so the start and the end of the title are both readable
+     rather than only glimpsed at the turn. */
+  0%, 15% {
+    transform: translateX(0);
+  }
+  85%, 100% {
+    transform: translateX(var(--marquee-shift, 0));
+  }
 }
 
 .player-nowplaying-label {
   color: var(--text-muted);
 }
 
+/* Its own row under the transport: at 440px the volume and channel controls
+   cannot sit beside the title without squeezing it to nothing. */
 .player-controls {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px 16px;
-  flex: none;
+  margin-top: 10px;
 }
 
 .player-volume-wrap {
@@ -2229,22 +2270,9 @@ html[data-theme="classic"] .player-outer {
   color: var(--text-secondary);
 }
 
-/* Below this the row cannot hold the transport, the title and the controls
-   side by side, so the deck stacks and centres instead. */
-@media (max-width: 700px) {
-  .player-panel {
-    text-align: center;
-  }
-
-  .player-main {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .player-controls {
-    justify-content: center;
-  }
-}
+/* No stacking breakpoint any more: the panel is capped at 440px at every
+   viewport, the controls already sit on their own row, and an over-long title
+   scrolls inside its viewport rather than forcing the row wider. */
 
 /* ==========================================================================
    Synthwave-only rules
