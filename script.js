@@ -590,7 +590,7 @@ function buildDetails(current, hourly, daily, air, nowIndex) {
 
   return `
     <div class="detail-card">
-      <div class="label">💨 Wind <span class="wind-dir-arrow" style="transform: rotate(${current.wind_direction_10m}deg)">↑</span> ${windDir}</div>
+      <div class="label">💨 Wind <span class="wind-dir-arrow" style="transform: rotate(${Math.round(current.wind_direction_10m)}deg)">↑</span> ${windDir}</div>
       <div class="wind-bar-wrap">
         <div class="wind-bar">
           <span class="wind-segment wind-segment-blue"></span>

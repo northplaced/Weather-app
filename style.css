@@ -1858,13 +1858,6 @@ button:hover {
   text-shadow: var(--glow-value);
 }
 
-.moon-phase-value {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: var(--text-primary);
-}
-
 .moon-arc-unavailable {
   color: var(--text-secondary);
   font-size: 0.85rem;
