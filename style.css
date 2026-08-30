@@ -716,6 +716,18 @@ body::after {
   margin: 8px 0 4px;
 }
 
+.pollen-summary-row {
+  display: block;
+}
+
+.pollen-summary-frag {
+  white-space: nowrap;
+}
+
+.pollen-summary-row + .pollen-summary-row {
+  margin-top: 2px;
+}
+
 .pollen-note {
   font-size: 0.7rem;
   color: var(--text-muted);

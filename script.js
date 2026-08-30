@@ -17,11 +17,11 @@ const UNITS_STORAGE_KEY = 'weatherapp-units';
 let unitSystem = localStorage.getItem(UNITS_STORAGE_KEY) === 'imperial' ? 'imperial' : 'si';
 
 // Theme is applied to <html> as a data-theme attribute; style.css defines a complete token set
-// per theme. Synthwave is the default and needs no attribute, so only 'classic' has to persist.
+// per theme. Classic is the default; Synthwave is the opt-in, so only 'synthwave' has to persist.
 // index.html reads this same key in an inline <head> script to set the attribute before first
 // paint — without that, the page paints in the default theme and then snaps to the saved one.
 const THEME_STORAGE_KEY = 'weatherapp-theme';
-let theme = localStorage.getItem(THEME_STORAGE_KEY) === 'classic' ? 'classic' : 'synthwave';
+let theme = localStorage.getItem(THEME_STORAGE_KEY) === 'synthwave' ? 'synthwave' : 'classic';
 
 // Cached inputs from the last successful render, so toggling units can re-render from the
 // already-fetched data instead of re-fetching from the API.
@@ -1546,8 +1546,8 @@ function buildPollenForecast(air) {
     const category = getPollenCategory(air[mostActive.key], mostActive.seasonStart, mostActive.peak);
     summary = `
       <p class="pollen-summary">
-        ${mostActive.name} (${mostActive.local}) is the most active today: <strong style="color: ${category.color}">${category.label}</strong>
-        at ${air[mostActive.key].toFixed(1)} grains/m&sup3; — season starts at ${mostActive.seasonStart}, peak at ${mostActive.peak}.
+        <span class="pollen-summary-row"><strong>${mostActive.name}</strong> (${mostActive.local}) is the most active today:</span>
+        <span class="pollen-summary-row"><span class="pollen-summary-frag"><strong style="color: ${category.color}">${category.label}</strong> at ${air[mostActive.key].toFixed(1)} grains/m&sup3; —</span> <span class="pollen-summary-frag">season starts at ${mostActive.seasonStart}, peak at ${mostActive.peak}.</span></span>
       </p>
     `;
   } else {

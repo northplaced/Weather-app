@@ -16,15 +16,16 @@
   <!-- Applies the saved theme before first paint. script.js runs at the end of
        <body>, which is too late: the page would paint in the default theme and
        then visibly snap to the saved one. localStorage access throws outright
-       in some privacy modes, hence the try/catch. -->
+       in some privacy modes, hence the try/catch. Classic is the default for
+       anyone with no saved preference yet; Synthwave is the opt-in. -->
   <script>
     (function () {
+      var t = 'classic';
       try {
-        var t = localStorage.getItem('weatherapp-theme');
-        if (t === 'classic' || t === 'synthwave') {
-          document.documentElement.setAttribute('data-theme', t);
-        }
+        var saved = localStorage.getItem('weatherapp-theme');
+        if (saved === 'classic' || saved === 'synthwave') t = saved;
       } catch (e) { /* storage unavailable; fall through to the default theme */ }
+      document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
 </head>
